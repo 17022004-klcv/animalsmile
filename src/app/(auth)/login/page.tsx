@@ -148,14 +148,16 @@ export default function PandaLogin() {
             </div>
           )}
 
-          <div className="login-heading">
+          <div className="login-heading ">
             <div className="login-logo">
               <img className="w-30 h-30" src="/img/logo_animalsmile.png" />
+              <div className="login-heading p-3">
+                <h1>
+                  Animal<span>Smile</span>
+                </h1>
+                <p>¡Qué bueno verte de nuevo!</p>
+              </div>
             </div>
-            <h1>
-              Animal<span>Smile</span>
-            </h1>
-            <p>¡Qué bueno verte de nuevo!</p>
           </div>
 
           <div className="form-group">
