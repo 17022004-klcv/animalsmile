@@ -1,0 +1,858 @@
+/* ===== FONDO ===== */
+.puppy-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 12% 15%, #fff5fa 0%, transparent 35%),
+    radial-gradient(ellipse at 88% 85%, #ffc4db 0%, transparent 38%),
+    linear-gradient(135deg, #f9b8d0, #f18aaf 48%, #dc6695);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== LAYOUT: PERRITO A LA IZQUIERDA, FORMULARIO A LA DERECHA ===== */
+.puppy-scene {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: center;
+  column-gap: 24px;
+  width: 100%;
+  max-width: 920px;
+  isolation: isolate;
+}
+
+.puppy-stage {
+  position: relative;
+  width: 100%;
+  height: 290px;
+  min-width: 0;
+}
+
+/* ===== CACHORRO ===== */
+.puppy {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 260px;
+  height: 262px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: puppy-float 3.5s ease-in-out infinite;
+}
+
+/* Cola que se mueve */
+.puppy-tail {
+  position: absolute;
+  z-index: 0;
+  top: 176px;
+  right: 14px;
+  width: 22px;
+  height: 64px;
+  background: linear-gradient(120deg, #c98a55, #9a5f38);
+  border: 2px solid #8a5430;
+  border-radius: 50% 50% 45% 45%;
+  transform-origin: 50% 92%;
+  transform: rotate(28deg);
+  animation: puppy-wag 0.45s ease-in-out infinite alternate;
+}
+
+/* ===== CABEZA (se inclina al esconderse) ===== */
+.puppy-head {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  transform-origin: 50% 75%;
+  transition: transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.puppy.is-hiding .puppy-head {
+  transform: rotate(-4deg) translateY(6px);
+}
+
+/* Orejas caídas */
+.puppy-ear {
+  position: absolute;
+  z-index: 3;
+  top: 22px;
+  width: 64px;
+  height: 112px;
+  background: linear-gradient(120deg, #8a5535, #5b3524);
+  border: 3px solid #4d2c1e;
+  border-radius: 50% 50% 55% 55% / 28% 28% 72% 72%;
+  box-shadow: 0 6px 12px #603a2c30;
+  transition: transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.puppy-ear span {
+  position: absolute;
+  inset: 12px 14px 22px;
+  background: #a8704a;
+  border-radius: inherit;
+  opacity: 0.55;
+}
+
+.puppy-ear-left {
+  left: 6px;
+  transform-origin: 50% 8%;
+  transform: rotate(10deg);
+}
+
+.puppy-ear-right {
+  right: 6px;
+  transform-origin: 50% 8%;
+  transform: rotate(-10deg);
+}
+
+/* Las orejitas se abren un poco cuando se tapa los ojos */
+.puppy.is-hiding .puppy-ear-left {
+  transform: rotate(20deg) translateY(4px);
+}
+
+.puppy.is-hiding .puppy-ear-right {
+  transform: rotate(-20deg) translateY(4px);
+}
+
+/* ===== CUERPO ===== */
+.puppy-body {
+  position: absolute;
+  top: 160px;
+  left: 50%;
+  width: 172px;
+  height: 102px;
+  transform: translateX(-50%);
+  background: linear-gradient(145deg, #fffaf0, #efdcc0);
+  border: 2px solid #fff;
+  border-radius: 46% 46% 38% 38%;
+  box-shadow: 0 10px 25px #653d4b20;
+}
+
+.puppy-belly {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  width: 92px;
+  height: 72px;
+  transform: translateX(-50%);
+  background: #fffdf8;
+  border-radius: 50%;
+}
+
+/* ===== CARA ===== */
+.puppy-face {
+  position: absolute;
+  z-index: 2;
+  top: 14px;
+  left: 50%;
+  width: 192px;
+  height: 172px;
+  overflow: hidden;
+  transform: translateX(-50%);
+  background: linear-gradient(145deg, #fffdf6, #f6e7cf);
+  border: 3px solid #fffaf4;
+  border-radius: 50% 50% 46% 46% / 52% 52% 48% 48%;
+  box-shadow: 0 7px 20px #603a2c20;
+}
+
+/* Mancha suave en la frente (bien arriba de los ojos) */
+.puppy-forehead {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  width: 92px;
+  height: 56px;
+  transform: translateX(-50%);
+  background: linear-gradient(160deg, #d39a66, #b97a4b);
+  border-radius: 50%;
+}
+
+/* ===== OJOS ===== */
+.puppy-eye-patch {
+  position: absolute;
+  top: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 48px;
+}
+
+.puppy-eye-left {
+  left: 30px;
+}
+
+.puppy-eye-right {
+  right: 30px;
+}
+
+.puppy-eye-white {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 46px;
+  overflow: hidden;
+  background: #fff;
+  border: 2px solid #8a5a3d;
+  border-radius: 50%;
+  animation: puppy-blink 5s ease-in-out infinite;
+}
+
+.puppy-eye-ball {
+  position: relative;
+  width: 28px;
+  height: 32px;
+  flex-shrink: 0;
+  background: #2a2230;
+  border-radius: 50%;
+  transition: transform 100ms ease-out;
+}
+
+.puppy-eye-ball span {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 9px;
+  height: 9px;
+  background: white;
+  border-radius: 50%;
+}
+
+.puppy-eye-ball::after {
+  content: "";
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  width: 4px;
+  height: 4px;
+  background: #ffffffaa;
+  border-radius: 50%;
+}
+
+/* Cejitas suaves (puntos claros sobre los ojos) */
+.puppy-brow {
+  position: absolute;
+  top: 31px;
+  width: 16px;
+  height: 7px;
+  background: #c68e5f;
+  border-radius: 50%;
+}
+
+.puppy-brow-left {
+  left: 44px;
+  transform: rotate(-8deg);
+}
+
+.puppy-brow-right {
+  right: 44px;
+  transform: rotate(8deg);
+}
+
+.puppy-eye-closed {
+  width: 26px;
+  height: 4px;
+  background: #3e2928;
+  border-radius: 50%;
+}
+
+/* ===== HOCICO ===== */
+.puppy-blush {
+  position: absolute;
+  top: 112px;
+  width: 26px;
+  height: 14px;
+  background: #f4a6b7;
+  border-radius: 50%;
+  filter: blur(2px);
+  opacity: 0.8;
+}
+
+.puppy-blush-left {
+  left: 8px;
+}
+
+.puppy-blush-right {
+  right: 8px;
+}
+
+.puppy-snout {
+  position: absolute;
+  top: 94px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  width: 108px;
+  height: 70px;
+  transform: translateX(-50%);
+  background: #fffdf6;
+  border: 2px solid #f1e0c6;
+  border-radius: 48% 48% 55% 55%;
+  box-shadow: 0 3px 8px #603a2c14;
+}
+
+.puppy-nose {
+  position: relative;
+  z-index: 2;
+  width: 40px;
+  height: 26px;
+  margin-top: 6px;
+  background: linear-gradient(135deg, #4a3530, #241a1f);
+  border-radius: 50% 50% 60% 60% / 42% 42% 58% 58%;
+}
+
+.puppy-nose span {
+  position: absolute;
+  top: 5px;
+  left: 9px;
+  width: 11px;
+  height: 5px;
+  background: #ffffff66;
+  border-radius: 50%;
+}
+
+.puppy-mouth {
+  width: 2px;
+  height: 14px;
+  background: #604039;
+}
+
+.puppy-smile {
+  position: absolute;
+  top: 34px;
+  width: 26px;
+  height: 15px;
+  border-bottom: 2.5px solid #604039;
+  border-radius: 50%;
+}
+
+.puppy-smile-left {
+  left: 25px;
+  transform: rotate(10deg);
+}
+
+.puppy-smile-right {
+  right: 25px;
+  transform: rotate(-10deg);
+}
+
+/* Lengüita que jadea */
+.puppy-tongue {
+  position: absolute;
+  top: 47px;
+  left: 50%;
+  width: 22px;
+  height: 18px;
+  margin-left: -11px;
+  background: linear-gradient(#f78fa8, #ec7391);
+  border-radius: 4px 4px 12px 12px;
+  transform-origin: top center;
+  animation: puppy-pant 1.1s ease-in-out infinite;
+}
+
+.puppy-tongue::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 2px;
+  height: 9px;
+  background: #d9617f;
+  border-radius: 2px;
+}
+
+.puppy.is-hiding .puppy-tongue {
+  opacity: 0;
+}
+
+/* ===== COLLAR ===== */
+.puppy-collar {
+  position: absolute;
+  z-index: 3;
+  top: 172px;
+  left: 50%;
+  width: 116px;
+  height: 17px;
+  transform: translateX(-50%);
+  background: linear-gradient(#ec6a9d, #db4d85);
+  border-radius: 10px;
+  box-shadow: 0 3px 6px #db4d8540;
+}
+
+.puppy-tag {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  width: 17px;
+  height: 17px;
+  margin-left: -8px;
+  background: radial-gradient(circle at 35% 35%, #fff2b8, #f5c95a);
+  border: 2px solid #d9a936;
+  border-radius: 50%;
+}
+
+/* ===== PATITAS DELANTERAS ===== */
+.puppy-arm {
+  position: absolute;
+  z-index: 5;
+  top: 176px;
+  width: 44px;
+  height: 70px;
+  background: linear-gradient(145deg, #fff4e0, #e8cfa6);
+  border: 2px solid #e0c093;
+  border-radius: 48% 48% 45% 45%;
+  box-shadow: 0 5px 9px #39211622;
+  transition:
+    top 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    left 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    right 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.puppy-arm-left {
+  left: 40px;
+  transform: rotate(3deg);
+}
+
+.puppy-arm-right {
+  right: 40px;
+  transform: rotate(-3deg);
+}
+
+.puppy-paw-pad {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  width: 20px;
+  height: 17px;
+  transform: translateX(-50%);
+  background: #e9a9aa;
+  border-radius: 50%;
+}
+
+.puppy-paw-toe {
+  position: absolute;
+  bottom: 27px;
+  width: 8px;
+  height: 10px;
+  background: #e9a9aa;
+  border-radius: 50%;
+}
+
+.puppy-paw-toe.toe-one {
+  left: 7px;
+}
+
+.puppy-paw-toe.toe-two {
+  right: 7px;
+}
+
+.puppy-paw-toe.toe-three {
+  bottom: 31px;
+  left: 50%;
+  margin-left: -4px;
+}
+
+/* Las patitas suben y tapan los ojos */
+.puppy.is-hiding .puppy-arm-left {
+  top: 44px;
+  left: 64px;
+  transform: rotate(14deg) scale(1.1);
+}
+
+.puppy.is-hiding .puppy-arm-right {
+  top: 44px;
+  right: 64px;
+  transform: rotate(-14deg) scale(1.1);
+}
+
+/* ===== PATAS TRASERAS ===== */
+.puppy-foot {
+  position: absolute;
+  z-index: 1;
+  top: 232px;
+  width: 60px;
+  height: 30px;
+  background: linear-gradient(145deg, #fff4e0, #e8cfa6);
+  border: 2px solid #e0c093;
+  border-radius: 18px 18px 30px 30px;
+}
+
+.puppy-foot-left {
+  left: 38px;
+  transform: rotate(6deg);
+}
+
+.puppy-foot-right {
+  right: 38px;
+  transform: rotate(-6deg);
+}
+
+.puppy-foot span {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 22px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: #e9a9aa;
+  border-radius: 50%;
+}
+
+/* ===== TARJETA (siempre fija) ===== */
+.puppy-form {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  min-width: 0;
+  padding: 30px;
+  background: rgb(255 255 255 / 94%);
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 28px;
+  box-shadow: 0 22px 55px #6b1f3f24;
+  backdrop-filter: blur(15px);
+}
+
+.puppy-heading {
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.puppy-heading h1 {
+  margin: 0;
+  color: #30232a;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.puppy-heading h1 span {
+  color: #e65d91;
+}
+
+.puppy-heading p {
+  margin: 7px 0 0;
+  color: #9b8992;
+  font-size: 12px;
+}
+
+.register-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 76px;
+  margin-bottom: 12px;
+}
+
+/* ===== CAMPOS ===== */
+.puppy-form-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px 14px;
+}
+
+.puppy-field {
+  position: relative;
+  min-width: 0;
+}
+
+.puppy-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: 53px;
+  padding: 18px 44px 7px 14px;
+  color: #352730;
+  font: inherit;
+  font-size: 12px;
+  background: #fff9fb;
+  border: 1.5px solid #f0dce5;
+  border-radius: 13px;
+  outline: none;
+  transition:
+    border-color 250ms ease,
+    background 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.puppy-input:focus {
+  background: #fff;
+  border-color: #e86c9b;
+  box-shadow: 0 0 0 4px #e86c9b1f;
+}
+
+.puppy-label {
+  position: absolute;
+  top: 17px;
+  left: 14px;
+  max-width: calc(100% - 50px);
+  overflow: hidden;
+  color: #a4939c;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  transition:
+    top 220ms ease,
+    color 220ms ease,
+    font-size 220ms ease;
+}
+
+.puppy-input:focus + .puppy-label,
+.puppy-input:not(:placeholder-shown) + .puppy-label {
+  top: 4px;
+  color: #df5d8e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.puppy-input-icon {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: #e98ab0;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* ===== BOTÓN ===== */
+.puppy-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 52px;
+  margin-top: 25px;
+  padding: 0 17px;
+  color: white;
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(110deg, #ec6a9d, #db4d85);
+  border: 0;
+  border-radius: 13px;
+  box-shadow: 0 8px 18px #dc4d8540;
+  cursor: pointer;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease;
+}
+
+.puppy-submit:hover {
+  box-shadow: 0 11px 24px #dc4d8559;
+  transform: translateY(-2px);
+}
+
+.puppy-submit:active {
+  transform: scale(0.98);
+}
+
+.puppy-submit svg {
+  transition: transform 200ms ease;
+}
+
+.puppy-submit:hover svg {
+  transform: translateX(4px);
+}
+
+.puppy-login-link {
+  margin: 20px 0 0;
+  color: #9b8992;
+  font-size: 11px;
+  text-align: center;
+}
+
+.puppy-login-link a {
+  color: #dc4d85;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.puppy-login-link a:hover {
+  text-decoration: underline;
+}
+
+.puppy-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 19px 0 0;
+  color: #ac9ba3;
+  font-size: 10px;
+}
+
+.puppy-footer span {
+  color: #e65d91;
+}
+
+.puppy-footer svg {
+  color: #e98ab0;
+}
+
+/* ===== MENSAJES ===== */
+.puppy-message {
+  margin-bottom: 17px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  font-size: 12px;
+  line-height: 1.5;
+  animation: puppy-message-in 220ms ease-out;
+}
+
+.puppy-message-error {
+  color: #a32d50;
+  background: #fff0f3;
+  border: 1px solid #f5c4d0;
+}
+
+.puppy-message-success {
+  color: #276548;
+  background: #effbf3;
+  border: 1px solid #bce8ca;
+}
+
+.puppy-form-error {
+  animation: puppy-shake 350ms ease-in-out;
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes puppy-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+
+@keyframes puppy-wag {
+  from {
+    transform: rotate(14deg);
+  }
+  to {
+    transform: rotate(42deg);
+  }
+}
+
+@keyframes puppy-pant {
+  0%,
+  100% {
+    transform: scaleY(0.75);
+  }
+  50% {
+    transform: scaleY(1.1);
+  }
+}
+
+@keyframes puppy-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  96% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes puppy-message-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes puppy-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+/* ===== TABLET Y MÓVIL ===== */
+@media (max-width: 700px) {
+  .puppy-page {
+    align-items: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 25px 14px;
+  }
+
+  .puppy-scene {
+    display: flex;
+    flex-direction: column;
+    max-width: 430px;
+  }
+
+  .puppy-stage {
+    flex: none;
+    height: 190px;
+  }
+
+  .puppy-stage .puppy {
+    top: -15px;
+    transform: translateX(-50%) scale(0.72);
+    transform-origin: top center;
+  }
+
+  .puppy-form {
+    padding: 25px 21px;
+  }
+
+  .puppy-form-fields {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 17px;
+  }
+
+  .puppy-heading {
+    margin-bottom: 21px;
+  }
+
+  .register-logo {
+    min-height: 20px;
+    margin-bottom: 8px;
+  }
+
+  .puppy-heading h1 {
+    font-size: 25px;
+  }
+
+  .puppy-footer {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .puppy,
+  .puppy-tail,
+  .puppy-tongue,
+  .puppy-eye-white {
+    animation: none;
+  }
+
+  .puppy-head,
+  .puppy-ear,
+  .puppy-arm,
+  .puppy-eye-ball,
+  .puppy-input,
+  .puppy-label,
+  .puppy-submit {
+    transition-duration: 0.01ms;
+  }
+}

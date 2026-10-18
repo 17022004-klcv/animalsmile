@@ -1,0 +1,622 @@
+/* ===== FONDO GENERAL ===== */
+.panda-page {
+  height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse at 15% 15%,
+      rgba(255, 255, 255, 0.65),
+      transparent 35%
+    ),
+    radial-gradient(
+      ellipse at 85% 85%,
+      rgba(255, 194, 218, 0.6),
+      transparent 35%
+    ),
+    linear-gradient(135deg, #f9b8d0 0%, #f18aaf 48%, #dc6695 100%);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.login-scene {
+  position: relative;
+  width: 100%;
+  max-width: 370px;
+  padding-top: 178px;
+  isolation: isolate;
+}
+
+/* ===== PANDA ===== */
+.panda {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 50%;
+  width: 260px;
+  height: 238px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: panda-float 3.5s ease-in-out infinite;
+}
+
+.panda-ear {
+  position: absolute;
+  top: 8px;
+  width: 67px;
+  height: 70px;
+  background: #20202a;
+  border: 5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 5px 10px rgba(65, 25, 43, 0.12);
+}
+
+.panda-ear-left {
+  left: 20px;
+  transform: rotate(-18deg);
+}
+
+.panda-ear-right {
+  right: 20px;
+  transform: rotate(18deg);
+}
+
+.panda-body {
+  position: absolute;
+  top: 135px;
+  left: 50%;
+  width: 190px;
+  height: 145px;
+  transform: translateX(-50%);
+  background: #fff;
+  border-radius: 48% 48% 35% 35%;
+  box-shadow: 0 10px 25px rgba(75, 35, 51, 0.13);
+}
+
+.panda-face {
+  position: absolute;
+  z-index: 2;
+  top: 20px;
+  left: 50%;
+  width: 226px;
+  height: 184px;
+  transform: translateX(-50%);
+  overflow: hidden;
+  background: linear-gradient(145deg, #fff 0%, #fff 75%, #f9f6f7 100%);
+  border: 3px solid #f5edf0;
+  border-radius: 48% 48% 46% 46%;
+  box-shadow: 0 7px 20px rgba(65, 25, 43, 0.12);
+}
+
+/* ===== OREJAS Y OJOS ===== */
+.eye-shade {
+  position: absolute;
+  top: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 79px;
+  background: #24232c;
+  border-radius: 48% 48% 45% 45%;
+}
+
+.eye-shade-left {
+  left: 34px;
+  transform: rotate(20deg);
+}
+
+.eye-shade-right {
+  right: 34px;
+  transform: rotate(-20deg);
+}
+
+.eye-white {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 39px;
+  overflow: hidden;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.eye-ball {
+  position: relative;
+  width: 19px;
+  height: 22px;
+  flex-shrink: 0;
+  background: #17171d;
+  border-radius: 50%;
+  transition: transform 100ms ease-out;
+}
+
+.eye-glint {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 6px;
+  height: 6px;
+  background: #fff;
+  border-radius: 50%;
+}
+
+.eye-closed {
+  width: 24px;
+  height: 4px;
+  background: #17171d;
+  border-radius: 50%;
+  animation: blink 180ms ease-out;
+}
+
+/* ===== HOCICO Y MEJILLAS ===== */
+.panda-blush {
+  position: absolute;
+  top: 117px;
+  width: 30px;
+  height: 15px;
+  background: #f6a6bc;
+  border-radius: 50%;
+  opacity: 0.65;
+  filter: blur(2px);
+}
+
+.panda-blush-left {
+  left: 18px;
+}
+
+.panda-blush-right {
+  right: 18px;
+}
+
+.panda-muzzle {
+  position: absolute;
+  top: 111px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  transform: translateX(-50%);
+}
+
+.panda-nose {
+  z-index: 2;
+  width: 22px;
+  height: 15px;
+  background: #24232c;
+  border-radius: 48% 48% 55% 55%;
+}
+
+.panda-mouth {
+  width: 17px;
+  height: 13px;
+  margin-top: -1px;
+  border-bottom: 2.5px solid #24232c;
+  border-radius: 0 0 50% 50%;
+}
+
+/* ===== PATAS DELANTERAS ===== */
+.panda-arm {
+  position: absolute;
+  z-index: 5;
+  top: 139px;
+  width: 49px;
+  height: 76px;
+  background: linear-gradient(145deg, #30303a, #181820);
+  border: 2px solid #15151c;
+  border-radius: 48% 48% 42% 42%;
+  box-shadow: 0 5px 9px rgba(0, 0, 0, 0.15);
+  transition:
+    top 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    left 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    right 550ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 550ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panda-arm-left {
+  left: 5px;
+  transform: rotate(25deg);
+}
+
+.panda-arm-right {
+  right: 5px;
+  transform: rotate(-25deg);
+}
+
+.paw-pad {
+  position: absolute;
+  bottom: 13px;
+  left: 50%;
+  width: 23px;
+  height: 24px;
+  transform: translateX(-50%);
+  background: #f2a4bd;
+  border: 2px solid #d987a2;
+  border-radius: 50%;
+}
+
+.paw-toe {
+  position: absolute;
+  top: 9px;
+  width: 9px;
+  height: 10px;
+  background: #f2a4bd;
+  border-radius: 50%;
+}
+
+.paw-toe-one {
+  left: 9px;
+}
+
+.paw-toe-two {
+  right: 9px;
+}
+
+/* Al escribir la contraseña, el panda se tapa los ojos */
+.panda-arm-left.cover-eyes-left {
+  top: 48px;
+  left: 66px;
+  transform: rotate(-34deg) scale(1.08);
+}
+
+.panda-arm-right.cover-eyes-right {
+  top: 48px;
+  right: 66px;
+  transform: rotate(34deg) scale(1.08);
+}
+
+/* ===== PATAS INFERIORES ===== */
+.panda-foot {
+  position: absolute;
+  z-index: 1;
+  top: 198px;
+  width: 73px;
+  height: 42px;
+  background: #20202a;
+  border: 3px solid #17171d;
+  border-radius: 20px 20px 35px 35px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+}
+
+.panda-foot-left {
+  left: 28px;
+  transform: rotate(8deg);
+}
+
+.panda-foot-right {
+  right: 28px;
+  transform: rotate(-8deg);
+}
+
+.panda-foot span {
+  position: absolute;
+  top: 9px;
+  left: 50%;
+  width: 30px;
+  height: 16px;
+  transform: translateX(-50%);
+  background: #f2a4bd;
+  border-radius: 50%;
+}
+
+/* ===== TARJETA DE LOGIN ===== */
+.panda-form {
+  position: relative;
+  z-index: 3;
+  padding: 35px 28px 23px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  box-shadow: 0 22px 55px rgba(107, 31, 63, 0.2);
+  backdrop-filter: blur(15px);
+  transition:
+    transform 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.login-heading {
+  margin-bottom: 31px;
+  text-align: center;
+}
+
+.heading-bear {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 27px;
+}
+
+.login-heading h1 {
+  margin: 0;
+  color: #30232a;
+  font-size: 29px;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.login-heading h1 span {
+  color: #e65d91;
+}
+
+.login-heading p {
+  margin: 7px 0 0;
+  color: #9b8992;
+  font-size: 12px;
+}
+.login-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 20px;
+  margin-bottom: 8px;
+}
+
+/* ===== CAMPOS CON ETIQUETAS FLOTANTES ===== */
+.form-group {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: 55px;
+  padding: 18px 43px 8px 15px;
+  color: #352730;
+  font: inherit;
+  font-size: 14px;
+  background: #fff9fb;
+  border: 1.5px solid #f0dce5;
+  border-radius: 14px;
+  outline: none;
+  transition:
+    border-color 250ms ease,
+    background 250ms ease,
+    box-shadow 250ms ease;
+}
+
+.form-control:focus {
+  background: #fff;
+  border-color: #e86c9b;
+  box-shadow: 0 0 0 4px rgba(232, 108, 155, 0.12);
+}
+
+.form-label {
+  position: absolute;
+  top: 18px;
+  left: 15px;
+  color: #a4939c;
+  font-size: 13px;
+  pointer-events: none;
+  transform-origin: left center;
+  transition:
+    top 220ms ease,
+    color 220ms ease,
+    font-size 220ms ease;
+}
+
+.form-control:focus + .form-label,
+.form-control:not(:placeholder-shown) + .form-label {
+  top: 5px;
+  color: #df5d8e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.input-icon {
+  position: absolute;
+  top: 50%;
+  right: 15px;
+  color: #e98ab0;
+  font-size: 17px;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+/* ===== BOTÓN ===== */
+.login-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 53px;
+  margin-top: 6px;
+  padding: 0 19px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  background: linear-gradient(110deg, #ec6a9d, #db4d85);
+  border: 0;
+  border-radius: 14px;
+  box-shadow: 0 8px 18px rgba(220, 77, 133, 0.25);
+  cursor: pointer;
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    filter 200ms ease;
+}
+
+.login-button:hover {
+  filter: brightness(1.04);
+  box-shadow: 0 11px 24px rgba(220, 77, 133, 0.35);
+  transform: translateY(-2px);
+}
+
+.login-button:active {
+  transform: scale(0.98);
+}
+
+.button-arrow {
+  font-size: 22px;
+  transition: transform 200ms ease;
+}
+
+.login-button:hover .button-arrow {
+  transform: translateX(4px);
+}
+
+.login-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 19px 0 0;
+  color: #ac9ba3;
+  font-size: 10px;
+}
+
+.login-footer span {
+  color: #e65d91;
+}
+
+.login-footer svg {
+  color: #e98ab0;
+}
+/* ===== ERROR ===== */
+.login-alert {
+  position: absolute;
+  z-index: 10;
+  top: -43px;
+  right: 0;
+  max-width: 100%;
+  padding: 11px 15px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  background: #e14d69;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(135, 20, 49, 0.18);
+  animation: alert-appear 250ms ease-out;
+}
+
+.login-alert::after {
+  position: absolute;
+  right: 24px;
+  bottom: -7px;
+  width: 14px;
+  height: 14px;
+  content: "";
+  background: #e14d69;
+  transform: rotate(45deg);
+}
+
+.login-error {
+  animation: shake 420ms ease-in-out;
+  box-shadow:
+    0 22px 55px rgba(107, 31, 63, 0.2),
+    0 0 0 2px rgba(225, 77, 105, 0.35);
+}
+
+/* ===== ANIMACIONES ===== */
+@keyframes panda-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -5px;
+  }
+}
+
+@keyframes blink {
+  from {
+    transform: scaleX(0.5);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes alert-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20%,
+  60% {
+    transform: translateX(-5px);
+  }
+  40%,
+  80% {
+    transform: translateX(5px);
+  }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 420px) {
+  .panda-page {
+    padding: 24px 14px;
+  }
+
+  .login-scene {
+    max-width: 350px;
+    padding-top: 170px;
+  }
+
+  .panda {
+    transform: translateX(-50%) scale(0.92);
+    transform-origin: top center;
+  }
+
+  .panda-form {
+    padding: 32px 22px 22px;
+  }
+
+  .login-heading h1 {
+    font-size: 26px;
+  }
+
+  .panda-arm-left.cover-eyes-left {
+    left: 66px;
+  }
+
+  .panda-arm-right.cover-eyes-right {
+    right: 66px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panda {
+    animation: none;
+  }
+
+  .panda-arm,
+  .eye-ball,
+  .form-control,
+  .form-label,
+  .login-button {
+    transition-duration: 0.01ms;
+  }
+}
+
+.register-link {
+  margin: 20px 0 0;
+  color: #9b8992;
+  font-size: 11px;
+  text-align: center;
+}
+
+.register-link a {
+  color: #dc4d85;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
