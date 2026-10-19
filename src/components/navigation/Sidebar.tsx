@@ -56,16 +56,20 @@ const menuSections: MenuSection[] = [
     title: "Gestión de Animales",
     icon: PawPrint,
     items: [
-      { title: "Ingresos", href: "/animales/ingresos", icon: FilePlus },
-      { title: "Expedientes", href: "/animales/expedientes", icon: FolderOpen },
+      { title: "Ingresos", href: "/admin/modules/Animals/Income", icon: FilePlus },
+      {
+        title: "Expedientes",
+        href: "/admin/modules/Animals/Records",
+        icon: FolderOpen,
+      },
       {
         title: "Bitácora de rescates",
-        href: "/animales/bitacora",
+        href: "/admin/modules/Animals/Binnacle",
         icon: ClipboardList,
       },
       {
         title: "Clasificaciones",
-        href: "/animales/clasificaciones",
+        href: "/admin/modules/Animals/Classification",
         icon: Tags,
       },
     ],
@@ -76,22 +80,22 @@ const menuSections: MenuSection[] = [
     items: [
       {
         title: "Registro de solicitantes",
-        href: "/adopciones/solicitantes",
+        href: "/admin/modules/Adoption/Applicants",
         icon: UserPlus,
       },
       {
         title: "Solicitudes",
-        href: "/adopciones/solicitudes",
+        href: "/admin/modules/Adoption/Applications",
         icon: FileCheck,
       },
       {
         title: "Contratos de Adopción",
-        href: "/adopciones/contratos",
+        href: "/admin/modules/Adoption/Contracts",
         icon: FileText,
       },
       {
         title: "Control de seguimiento",
-        href: "/adopciones/seguimiento",
+        href: "/admin/modules/Adoption/FollowUpControl",
         icon: Activity,
       },
     ],
@@ -100,10 +104,14 @@ const menuSections: MenuSection[] = [
     title: "Santuarios y Traslados",
     icon: Home,
     items: [
-      { title: "Santuarios", href: "/santuarios", icon: Building2 },
+      {
+        title: "Santuarios",
+        href: "/admin/modules/Sanctuaries/Sanctuaries",
+        icon: Building2,
+      },
       {
         title: "Control de traslados",
-        href: "/santuarios/traslados",
+        href: "/admin/modules/Sanctuaries/Transfers",
         icon: Truck,
       },
     ],
@@ -114,12 +122,12 @@ const menuSections: MenuSection[] = [
     items: [
       {
         title: "Donaciones Financieras",
-        href: "/donaciones/financieras",
+        href: "/admin/modules/Donations/FinancialDonations",
         icon: Coins,
       },
       {
         title: "Donaciones en Especie",
-        href: "/donaciones/especie",
+        href: "/admin/modules/Donations/InKindDonations",
         icon: Package,
       },
     ],
@@ -127,7 +135,9 @@ const menuSections: MenuSection[] = [
   {
     title: "Gestión de Usuarios",
     icon: Users,
-    items: [{ title: "Usuarios", href: "/usuarios", icon: UserCheck }],
+    items: [
+      { title: "Usuarios", href: "/admin/modules/Users/Users", icon: UserCheck },
+    ],
   },
   {
     title: "Seguridad",
@@ -135,12 +145,12 @@ const menuSections: MenuSection[] = [
     items: [
       {
         title: "Accesos al sistema",
-        href: "/seguridad/accesos",
+        href: "/admin/modules/Security/SystemAccess",
         icon: KeyRound,
       },
       {
         title: "Recuperación de datos (backups)",
-        href: "/seguridad/backups",
+        href: "/admin/modules/Security/BackUps",
         icon: Database,
       },
     ],
@@ -151,12 +161,12 @@ const menuSections: MenuSection[] = [
     items: [
       {
         title: "Configuración del sistema",
-        href: "/configuracion/sistema",
+        href: "/admin/modules/Config/SystemConfiguration",
         icon: Sliders,
       },
       {
         title: "Configuración del sitio web",
-        href: "/configuracion/web",
+        href: "/admin/modules/Config/WebsiteConfiguration",
         icon: Globe,
       },
     ],

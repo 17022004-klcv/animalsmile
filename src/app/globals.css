@@ -1,8 +1,10 @@
 @import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --color-primary: #ed019f; /* Rosa principal */
+  --color-secondary: #727eff; /* Púrpura / Azul */
+  --color-accent: #fa5780; /* Coral / Rosa claro */
+  --color-dark: #666df3; /* Púrpura intenso */
+  --color-muted: #7ca6c2; /* Azul grisáceo */
 }
 
 @theme inline {
