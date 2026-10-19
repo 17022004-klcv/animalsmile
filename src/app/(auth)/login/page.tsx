@@ -35,17 +35,36 @@ export default function PandaLogin() {
     };
   }, []);
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsWrong(false);
 
-    if (username.trim() !== "admin" || password !== "123456") {
+    const email = username.trim().toLowerCase();
+
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        redirect?: string;
+      };
+
+      if (!res.ok) {
+        setIsWrong(true);
+        window.setTimeout(() => setIsWrong(false), 3000);
+        return;
+      }
+
+      const destino = data.redirect ?? ("/");
+      window.location.href = destino;
+    } catch {
       setIsWrong(true);
       window.setTimeout(() => setIsWrong(false), 3000);
-      return;
     }
-
-    setIsWrong(false);
-    alert("¡Bienvenido al sistema del refugio!");
   };
 
   return (
@@ -150,7 +169,7 @@ export default function PandaLogin() {
 
           <div className="login-heading ">
             <div className="login-logo">
-              <img className="w-30 h-30" src="/img/logo_animalsmile.png" />
+              <img className="w-30 h-30" src="/img/logo_animalsmile.png" alt="Logo de AnimalSmile" />
               <div className="login-heading p-3">
                 <h1>
                   Animal<span>Smile</span>
@@ -163,16 +182,16 @@ export default function PandaLogin() {
           <div className="form-group">
             <input
               id="username"
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder=" "
+               type="email"
+               autoComplete="email"
+               required
+               value={username}
+               onChange={(e) => setUsername(e.target.value)}
+               placeholder=" "
               className="form-control"
             />
             <label htmlFor="username" className="form-label">
-              Usuario
+              Correo electrónico
             </label>
             <Rabbit className="input-icon" size={18} strokeWidth={2} />
           </div>

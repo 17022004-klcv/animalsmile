@@ -14,7 +14,8 @@ import "./puppy-register.css";
 const PASSWORD_IDS = ["register-password", "register-confirm-password"];
 
 export default function PuppyRegister() {
-  const [name, setName] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellido, setApellido] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -22,6 +23,7 @@ export default function PuppyRegister() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [eyePos, setEyePos] = useState({ x: 0, y: 0 });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -48,13 +50,36 @@ export default function PuppyRegister() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSuccess("");
 
+    const nombreLimpio = nombre.trim();
+    const apellidoLimpio = apellido.trim();
+
+    if (!nombreLimpio || !apellidoLimpio) {
+      setError("Nombre y apellido son obligatorios.");
+      return;
+    }
+
+    if (nombreLimpio.length > 100 || apellidoLimpio.length > 100) {
+      setError("Nombre y apellido no pueden superar 100 caracteres.");
+      return;
+    }
+
+    if (email.trim().length > 150) {
+      setError("El correo electrónico no es válido.");
+      return;
+    }
+
     if (password.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    if (password.length > 72) {
+      setError("La contraseña no puede superar 72 caracteres.");
       return;
     }
 
@@ -63,8 +88,35 @@ export default function PuppyRegister() {
       return;
     }
 
-    // Aquí puedes conectar tu API de registro.
-    setSuccess("¡Todo listo! El formulario está validado.");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre: nombreLimpio,
+          apellido: apellidoLimpio,
+          email: email.trim().toLowerCase(),
+          password,
+        }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        redirect?: string;
+      };
+
+      if (!res.ok) {
+        setError(data.error ?? "No se pudo crear la cuenta.");
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = data.redirect ?? "/";
+    } catch {
+      setError("Ha ocurrido un error. Intenta de nuevo más tarde.");
+      setLoading(false);
+    }
   };
 
   const eye = (side: "left" | "right") => (
@@ -164,7 +216,7 @@ export default function PuppyRegister() {
           <header className="puppy-heading">
             {/* Espacio reservado para tu logo */}
             <div className="register-logo">
-              <img className="w-30 h-30" src="/img/logo_animalsmile.png" />
+              <img className="w-30 h-30" src="/img/logo_animalsmile.png" alt="Logo de AnimalSmile" />
             </div>
 
             <h1>
@@ -190,16 +242,34 @@ export default function PuppyRegister() {
               <input
                 id="register-name"
                 type="text"
-                autoComplete="name"
+                autoComplete="given-name"
                 required
                 maxLength={100}
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                value={nombre}
+                onChange={(e) => setNombre(e.target.value)}
                 placeholder=" "
                 className="puppy-input"
               />
               <label htmlFor="register-name" className="puppy-label">
-                Nombre completo
+                Nombre
+              </label>
+              <UserRound className="puppy-input-icon" size={18} />
+            </div>
+
+            <div className="puppy-field">
+              <input
+                id="register-apellido"
+                type="text"
+                autoComplete="family-name"
+                required
+                maxLength={100}
+                value={apellido}
+                onChange={(e) => setApellido(e.target.value)}
+                placeholder=" "
+                className="puppy-input"
+              />
+              <label htmlFor="register-apellido" className="puppy-label">
+                Apellido
               </label>
               <UserRound className="puppy-input-icon" size={18} />
             </div>
@@ -266,8 +336,8 @@ export default function PuppyRegister() {
             </div>
           </div>
 
-          <button type="submit" className="puppy-submit">
-            <span>Crear mi cuenta</span>
+          <button type="submit" className="puppy-submit" disabled={loading}>
+            <span>{loading ? "Creando cuenta..." : "Crear mi cuenta"}</span>
             <ArrowRight size={19} />
           </button>
 
