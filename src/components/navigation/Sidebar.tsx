@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTheme } from "@/src/context/ThemeContext";
 import {
   PawPrint,
   Heart,
@@ -49,6 +50,22 @@ interface MenuSection {
   title: string;
   icon: React.ElementType;
   items: SubOption[];
+}
+
+function conAlpha(hex: string, alpha: number): string {
+  const limpio = hex.replace("#", "");
+  const valor =
+    limpio.length === 3
+      ? limpio
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : limpio;
+  const numero = parseInt(valor, 16);
+  const r = (numero >> 16) & 255;
+  const g = (numero >> 8) & 255;
+  const b = numero & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
 const menuSections: MenuSection[] = [
@@ -175,6 +192,7 @@ const menuSections: MenuSection[] = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { palette } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     "Gestión de Animales": true,
@@ -208,7 +226,7 @@ export default function Sidebar() {
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
         className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl text-white shadow-lg focus:outline-none"
-        style={{ backgroundColor: "#666DF3" }}
+        style={{ backgroundColor: palette.dark }}
         aria-label="Abrir menú"
       >
         {isMobileOpen ? <X size={22} /> : <Menu size={22} />}
@@ -240,7 +258,8 @@ export default function Sidebar() {
               {!isCollapsed && (
                 <div className="truncate">
                   <h1 className="font-bold text-sm text-slate-800 leading-tight truncate">
-                    Animal<span style={{ color: "#ED019F" }}>Smile</span>
+                    Animal
+                    <span style={{ color: palette.primary }}>Smile</span>
                   </h1>
                   <p className="text-[11px] font-medium text-slate-400 truncate">
                     Refugio de Animales
@@ -256,7 +275,7 @@ export default function Sidebar() {
               title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             >
               {isCollapsed ? (
-                <PanelLeftOpen size={19} style={{ color: "#727EFF" }} />
+                <PanelLeftOpen size={19} style={{ color: palette.secondary }} />
               ) : (
                 <PanelLeftClose
                   size={19}
@@ -275,7 +294,7 @@ export default function Sidebar() {
                 placeholder="Buscar sección..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 focus:outline-none hover:border-[#ED019F] focus:border-[#ED019F] focus:ring-1 focus:ring-[#ED019F] transition-all duration-200"
+                className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-700 placeholder-slate-400 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] transition-all duration-200"
               />
             </div>
           )}
@@ -300,7 +319,7 @@ export default function Sidebar() {
                   <div className="flex items-center gap-2.5 min-w-0">
                     <SectionIcon
                       size={18}
-                      style={{ color: "#727EFF" }}
+                      style={{ color: palette.secondary }}
                       className="shrink-0 transition-colors group-hover:scale-110"
                     />
                     {!isCollapsed && (
@@ -341,20 +360,23 @@ export default function Sidebar() {
                           style={
                             isActive
                               ? {
-                                  backgroundColor: "rgba(237, 1, 159, 0.08)",
-                                  color: "#ED019F",
-                                  borderColor: "#ED019F",
+                                  backgroundColor: conAlpha(
+                                    palette.primary,
+                                    0.08,
+                                  ),
+                                  color: palette.primary,
+                                  borderColor: palette.primary,
                                 }
                               : undefined
                           }
                         >
-                          {/* Ícono de submódulo con hover en rosado #ED019F */}
+                          {/* Ícono de submódulo con hover en el color principal */}
                           <SubIcon
                             size={15}
                             className={`shrink-0 transition-colors ${
                               isActive
-                                ? "text-[#ED019F]"
-                                : "text-slate-400 group-hover/item:text-[#ED019F]"
+                                ? "text-[var(--color-primary)]"
+                                : "text-slate-400 group-hover/item:text-[var(--color-primary)]"
                             }`}
                           />
                           <span className="truncate">{item.title}</span>
@@ -378,7 +400,7 @@ export default function Sidebar() {
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                style={{ backgroundColor: "#7CA6C2" }}
+                style={{ backgroundColor: palette.muted }}
               >
                 US
               </div>
@@ -396,7 +418,7 @@ export default function Sidebar() {
             {!isCollapsed && (
               <button
                 className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-md transition shrink-0"
-                style={{ color: "#FA5780" }}
+                style={{ color: palette.accent }}
                 title="Cerrar sesión"
                 onClick={async () => {
                   try {
