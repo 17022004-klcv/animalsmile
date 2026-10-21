@@ -69,3 +69,67 @@ export enum AccionBitacora {
   Verificacion = "Verificacion",
   Descarga = "Descarga",
 }
+
+// Valores como arrays para validación isomorfa (client y server).
+export const ROLES_USUARIO = [
+  "Administrador",
+  "Veterinario",
+  "Encargado_Adopciones",
+  "Voluntario",
+] as const;
+
+export const ESTADOS_SOLICITUD = [
+  "Pendiente",
+  "En_Evaluacion",
+  "Entrevista_Domiciliaria",
+  "Aprobada",
+  "Rechazada",
+] as const;
+
+export const TIPOS_DONACION = [
+  "Financiera",
+  "Alimentos",
+  "Medicamentos",
+  "Higiene_Limpieza",
+  "Equipamiento_Otros",
+] as const;
+
+export const TIPOS_BACKUP = [
+  "Completo",
+  "Incremental",
+  "Diferencial",
+] as const;
+
+export const ESTADOS_BACKUP = [
+  "En_Proceso",
+  "Completado",
+  "Fallido",
+  "Restaurado",
+] as const;
+
+export const ACCIONES_BITACORA = [
+  "Creacion",
+  "Actualizacion",
+  "Cambio_Estado",
+  "Asignacion_Animal",
+  "Adjunto_Foto",
+  "Eliminacion",
+  "Restauracion",
+  "Verificacion",
+  "Descarga",
+] as const;
+
+export const TIPOS_EVENTO_ACCESO = [
+  "Login",
+  "Logout",
+  "Login_Fallido",
+  "Bloqueo_Cuenta",
+  "Cambio_Password",
+] as const;
+
+export const OPERACIONES_AUDITORIA = [
+  "INSERT",
+  "UPDATE",
+  "DELETE",
+  "SOFT_DELETE",
+] as const;
