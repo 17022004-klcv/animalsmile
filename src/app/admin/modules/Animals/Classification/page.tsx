@@ -20,45 +20,21 @@ import {
   AlertTriangle,
 } from "lucide-react";
 
-type Taxonomia = {
-  id_taxonomia: number;
-  nombre_clase: string;
-  _count?: { especies: number };
-};
-
-type Especie = {
-  id_especie: number;
-  nombre_comun: string;
-  es_domestico: boolean | null;
-  creado_en: string | null;
-  id_taxonomia: number;
-  taxonomia: { nombre_clase: string };
-  _count?: { animales: number };
-};
+import type {
+  EspecieConRelaciones,
+  TaxonomiaConEspecies,
+} from "@/src/types/classification";
+import {
+  actualizarEspecie,
+  actualizarTaxonomia,
+  crearEspecie,
+  crearTaxonomia,
+  eliminarEspecie,
+  eliminarTaxonomia,
+  obtenerClasificaciones,
+} from "@/src/services/classifications/classification-client";
 
 type ModoModal = "crear" | "editar";
-
-async function obtenerClasificaciones(): Promise<{
-  especies: Especie[];
-  taxonomias: Taxonomia[];
-}> {
-  const [resEspecies, resTaxonomias] = await Promise.all([
-    fetch("/api/admin/classifications/species"),
-    fetch("/api/admin/classifications/taxonomies"),
-  ]);
-
-  if (!resEspecies.ok || !resTaxonomias.ok) {
-    throw new Error("No se pudieron cargar los datos.");
-  }
-
-  const dataEspecies = await resEspecies.json();
-  const dataTaxonomias = await resTaxonomias.json();
-
-  return {
-    especies: dataEspecies.especies ?? [],
-    taxonomias: dataTaxonomias.taxonomias ?? [],
-  };
-}
 
 export default function ClasificacionesPage() {
   const { palette } = useTheme();
@@ -71,8 +47,8 @@ export default function ClasificacionesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const [especies, setEspecies] = useState<Especie[]>([]);
-  const [taxonomias, setTaxonomias] = useState<Taxonomia[]>([]);
+  const [especies, setEspecies] = useState<EspecieConRelaciones[]>([]);
+  const [taxonomias, setTaxonomias] = useState<TaxonomiaConEspecies[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -159,39 +135,33 @@ export default function ClasificacionesPage() {
 
     try {
       const esTaxonomia = modal.tipo === "taxonomia";
-      const url = esTaxonomia
-        ? modal.modo === "crear"
-          ? "/api/admin/classifications/taxonomies"
-          : `/api/admin/classifications/taxonomies/${modal.id}`
-        : modal.modo === "crear"
-          ? "/api/admin/classifications/species"
-          : `/api/admin/classifications/species/${modal.id}`;
 
-      const payload = esTaxonomia
-        ? { nombre_clase: formNombre }
-        : {
-            nombre_comun: formNombre,
-            id_taxonomia: Number(formTaxonomia),
-            es_domestico: formDomestico,
-          };
-
-      const res = await fetch(url, {
-        method: modal.modo === "crear" ? "POST" : "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-
-      if (!res.ok) {
-        setError(data.error ?? "No se pudo guardar el registro.");
-        return;
+      if (esTaxonomia) {
+        const payload = { nombre_clase: formNombre };
+        if (modal.modo === "crear") {
+          await crearTaxonomia(payload);
+        } else if (modal.id !== undefined) {
+          await actualizarTaxonomia(modal.id, payload);
+        }
+      } else {
+        const payload = {
+          nombre_comun: formNombre,
+          id_taxonomia: Number(formTaxonomia),
+          es_domestico: formDomestico,
+        };
+        if (modal.modo === "crear") {
+          await crearEspecie(payload);
+        } else if (modal.id !== undefined) {
+          await actualizarEspecie(modal.id, payload);
+        }
       }
 
       setModal(null);
       await cargarDatos();
-    } catch {
-      setError("Error de conexión con el servidor.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo guardar el registro.",
+      );
     } finally {
       setGuardando(false);
     }
@@ -212,21 +182,16 @@ export default function ClasificacionesPage() {
 
     setError(null);
     try {
-      const url =
-        tipo === "especie"
-          ? `/api/admin/classifications/species/${id}`
-          : `/api/admin/classifications/taxonomies/${id}`;
-      const res = await fetch(url, { method: "DELETE" });
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-
-      if (!res.ok) {
-        setError(data.error ?? "No se pudo eliminar el registro.");
-        return;
+      if (tipo === "especie") {
+        await eliminarEspecie(id);
+      } else {
+        await eliminarTaxonomia(id);
       }
-
       await cargarDatos();
-    } catch {
-      setError("Error de conexión con el servidor.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo eliminar el registro.",
+      );
     }
   };
 
@@ -262,7 +227,7 @@ export default function ClasificacionesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const verDetalleEspecie = (item: Especie) => {
+  const verDetalleEspecie = (item: EspecieConRelaciones) => {
     setDetalle({
       titulo: item.nombre_comun,
       filas: [
@@ -279,7 +244,7 @@ export default function ClasificacionesPage() {
     });
   };
 
-  const verDetalleTaxonomia = (item: Taxonomia) => {
+  const verDetalleTaxonomia = (item: TaxonomiaConEspecies) => {
     setDetalle({
       titulo: item.nombre_clase,
       filas: [
@@ -299,7 +264,7 @@ export default function ClasificacionesPage() {
     URL.revokeObjectURL(url);
   };
 
-  const descargarFichaEspecie = (item: Especie) => {
+  const descargarFichaEspecie = (item: EspecieConRelaciones) => {
     const contenido = [
       "FICHA DE ESPECIE - AnimalSmile",
       "".padEnd(40, "="),
@@ -320,7 +285,7 @@ export default function ClasificacionesPage() {
     );
   };
 
-  const descargarFichaTaxonomia = (item: Taxonomia) => {
+  const descargarFichaTaxonomia = (item: TaxonomiaConEspecies) => {
     const contenido = [
       "FICHA DE TAXONOMÍA - AnimalSmile",
       "".padEnd(40, "="),

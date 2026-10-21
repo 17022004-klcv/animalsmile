@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
 import { getSession } from "@/src/lib/auth";
+import { parseEspecieParcial } from "@/src/services/classifications/classification-validation";
+import {
+  actualizarEspecie,
+  eliminarEspecie,
+  parseIntId,
+} from "@/src/services/classifications/classification-server";
+import { ErrorServicio } from "@/src/services/common/errors";
 
 type Params = { params: Promise<{ id: string }> };
+
+function respuestaServicio(error: unknown, mensajeInterno: string) {
+  if (error instanceof ErrorServicio) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status },
+    );
+  }
+  console.error(mensajeInterno, error);
+  return NextResponse.json(
+    { error: "Ocurrió un error inesperado. Intenta de nuevo." },
+    { status: 500 },
+  );
+}
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const session = await getSession();
@@ -11,9 +31,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const idEspecie = Number(id);
-  if (!Number.isInteger(idEspecie)) {
-    return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+
+  let idEspecie: number;
+  try {
+    idEspecie = parseIntId(id);
+  } catch (error) {
+    return respuestaServicio(error, "Error con el ID de especie:");
   }
 
   let body: unknown;
@@ -23,69 +46,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
-  const { nombre_comun, id_taxonomia, es_domestico } = (body ?? {}) as {
-    nombre_comun?: unknown;
-    id_taxonomia?: unknown;
-    es_domestico?: unknown;
-  };
-
-  const data: {
-    nombre_comun?: string;
-    id_taxonomia?: number;
-    es_domestico?: boolean;
-  } = {};
-
-  if (nombre_comun !== undefined) {
-    const nombre = typeof nombre_comun === "string" ? nombre_comun.trim() : "";
-    if (!nombre) {
-      return NextResponse.json(
-        { error: "El nombre común es obligatorio." },
-        { status: 400 },
-      );
-    }
-    data.nombre_comun = nombre;
-  }
-
-  if (id_taxonomia !== undefined) {
-    const idTaxonomia = Number(id_taxonomia);
-    if (!Number.isInteger(idTaxonomia)) {
-      return NextResponse.json(
-        { error: "Debes seleccionar una taxonomía válida." },
-        { status: 400 },
-      );
-    }
-    data.id_taxonomia = idTaxonomia;
-  }
-
-  if (es_domestico !== undefined) {
-    data.es_domestico = es_domestico !== false;
+  const parseo = parseEspecieParcial(body);
+  if (!parseo.ok) {
+    return NextResponse.json({ error: parseo.error }, { status: 400 });
   }
 
   try {
-    const especie = await prisma.especie.update({
-      where: { id_especie: idEspecie },
-      data,
-      include: { taxonomia: true },
-    });
+    const especie = await actualizarEspecie(idEspecie, parseo.valor);
     return NextResponse.json({ especie });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2003") {
-      return NextResponse.json(
-        { error: "La taxonomía seleccionada no existe." },
-        { status: 409 },
-      );
-    }
-    if ((error as { code?: string }).code === "P2025") {
-      return NextResponse.json(
-        { error: "Especie no encontrada." },
-        { status: 404 },
-      );
-    }
-    console.error("Error al actualizar especie:", error);
-    return NextResponse.json(
-      { error: "No se pudo actualizar la especie." },
-      { status: 500 },
-    );
+    return respuestaServicio(error, "Error al actualizar especie:");
   }
 }
 
@@ -96,33 +66,18 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const idEspecie = Number(id);
-  if (!Number.isInteger(idEspecie)) {
-    return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+
+  let idEspecie: number;
+  try {
+    idEspecie = parseIntId(id);
+  } catch (error) {
+    return respuestaServicio(error, "Error con el ID de especie:");
   }
 
   try {
-    await prisma.especie.delete({ where: { id_especie: idEspecie } });
+    await eliminarEspecie(idEspecie);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2003") {
-      return NextResponse.json(
-        {
-          error: "No se puede eliminar: hay animales registrados de esta especie.",
-        },
-        { status: 409 },
-      );
-    }
-    if ((error as { code?: string }).code === "P2025") {
-      return NextResponse.json(
-        { error: "Especie no encontrada." },
-        { status: 404 },
-      );
-    }
-    console.error("Error al eliminar especie:", error);
-    return NextResponse.json(
-      { error: "No se pudo eliminar la especie." },
-      { status: 500 },
-    );
+    return respuestaServicio(error, "Error al eliminar especie:");
   }
 }

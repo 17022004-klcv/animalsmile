@@ -1,8 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
 import { getSession } from "@/src/lib/auth";
+import { parseTaxonomiaInput } from "@/src/services/classifications/classification-validation";
+import {
+  actualizarTaxonomia,
+  eliminarTaxonomia,
+  parseIntId,
+} from "@/src/services/classifications/classification-server";
+import { ErrorServicio } from "@/src/services/common/errors";
 
 type Params = { params: Promise<{ id: string }> };
+
+function respuestaServicio(error: unknown, mensajeInterno: string) {
+  if (error instanceof ErrorServicio) {
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status },
+    );
+  }
+  console.error(mensajeInterno, error);
+  return NextResponse.json(
+    { error: "Ocurrió un error inesperado. Intenta de nuevo." },
+    { status: 500 },
+  );
+}
 
 export async function PATCH(request: NextRequest, { params }: Params) {
   const session = await getSession();
@@ -11,9 +31,12 @@ export async function PATCH(request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const idTaxonomia = Number(id);
-  if (!Number.isInteger(idTaxonomia)) {
-    return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+
+  let idTaxonomia: number;
+  try {
+    idTaxonomia = parseIntId(id);
+  } catch (error) {
+    return respuestaServicio(error, "Error con el ID de taxonomía:");
   }
 
   let body: unknown;
@@ -23,40 +46,16 @@ export async function PATCH(request: NextRequest, { params }: Params) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
-  const { nombre_clase } = (body ?? {}) as { nombre_clase?: unknown };
-  const nombre = typeof nombre_clase === "string" ? nombre_clase.trim() : "";
-
-  if (!nombre) {
-    return NextResponse.json(
-      { error: "El nombre de la clase es obligatorio." },
-      { status: 400 },
-    );
+  const parseo = parseTaxonomiaInput(body);
+  if (!parseo.ok) {
+    return NextResponse.json({ error: parseo.error }, { status: 400 });
   }
 
   try {
-    const taxonomia = await prisma.taxonomia.update({
-      where: { id_taxonomia: idTaxonomia },
-      data: { nombre_clase: nombre },
-    });
+    const taxonomia = await actualizarTaxonomia(idTaxonomia, parseo.valor.nombre_clase);
     return NextResponse.json({ taxonomia });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2002") {
-      return NextResponse.json(
-        { error: "Ya existe una taxonomía con ese nombre." },
-        { status: 409 },
-      );
-    }
-    if ((error as { code?: string }).code === "P2025") {
-      return NextResponse.json(
-        { error: "Taxonomía no encontrada." },
-        { status: 404 },
-      );
-    }
-    console.error("Error al actualizar taxonomía:", error);
-    return NextResponse.json(
-      { error: "No se pudo actualizar la taxonomía." },
-      { status: 500 },
-    );
+    return respuestaServicio(error, "Error al actualizar taxonomía:");
   }
 }
 
@@ -67,34 +66,18 @@ export async function DELETE(_request: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const idTaxonomia = Number(id);
-  if (!Number.isInteger(idTaxonomia)) {
-    return NextResponse.json({ error: "ID inválido." }, { status: 400 });
+
+  let idTaxonomia: number;
+  try {
+    idTaxonomia = parseIntId(id);
+  } catch (error) {
+    return respuestaServicio(error, "Error con el ID de taxonomía:");
   }
 
   try {
-    await prisma.taxonomia.delete({ where: { id_taxonomia: idTaxonomia } });
+    await eliminarTaxonomia(idTaxonomia);
     return NextResponse.json({ ok: true });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2003") {
-      return NextResponse.json(
-        {
-          error:
-            "No se puede eliminar: hay especies asignadas a esta taxonomía.",
-        },
-        { status: 409 },
-      );
-    }
-    if ((error as { code?: string }).code === "P2025") {
-      return NextResponse.json(
-        { error: "Taxonomía no encontrada." },
-        { status: 404 },
-      );
-    }
-    console.error("Error al eliminar taxonomía:", error);
-    return NextResponse.json(
-      { error: "No se pudo eliminar la taxonomía." },
-      { status: 500 },
-    );
+    return respuestaServicio(error, "Error al eliminar taxonomía:");
   }
 }

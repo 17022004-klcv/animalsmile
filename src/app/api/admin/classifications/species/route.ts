@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
 import { getSession } from "@/src/lib/auth";
+import { parseEspecieInput } from "@/src/services/classifications/classification-validation";
+import {
+  crearEspecie,
+  listarEspecies,
+} from "@/src/services/classifications/classification-server";
+import { ErrorServicio } from "@/src/services/common/errors";
 
 export async function GET() {
   const session = await getSession();
@@ -8,14 +13,7 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const especies = await prisma.especie.findMany({
-    orderBy: { nombre_comun: "asc" },
-    include: {
-      taxonomia: true,
-      _count: { select: { animales: true } },
-    },
-  });
-
+  const especies = await listarEspecies();
   return NextResponse.json({ especies });
 }
 
@@ -32,46 +30,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
-  const { nombre_comun, id_taxonomia, es_domestico } = (body ?? {}) as {
-    nombre_comun?: unknown;
-    id_taxonomia?: unknown;
-    es_domestico?: unknown;
-  };
-
-  const nombre = typeof nombre_comun === "string" ? nombre_comun.trim() : "";
-  const idTaxonomia = Number(id_taxonomia);
-
-  if (!nombre) {
-    return NextResponse.json(
-      { error: "El nombre común es obligatorio." },
-      { status: 400 },
-    );
-  }
-  if (!Number.isInteger(idTaxonomia)) {
-    return NextResponse.json(
-      { error: "Debes seleccionar una taxonomía válida." },
-      { status: 400 },
-    );
+  const parseo = parseEspecieInput(body);
+  if (!parseo.ok) {
+    return NextResponse.json({ error: parseo.error }, { status: 400 });
   }
 
   try {
-    const especie = await prisma.especie.create({
-      data: {
-        nombre_comun: nombre,
-        id_taxonomia: idTaxonomia,
-        es_domestico: es_domestico !== false,
-      },
-      include: { taxonomia: true },
-    });
+    const especie = await crearEspecie(parseo.valor);
     return NextResponse.json({ especie }, { status: 201 });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2003") {
+    if (error instanceof ErrorServicio) {
       return NextResponse.json(
-        { error: "La taxonomía seleccionada no existe." },
-        { status: 409 },
+        { error: error.message },
+        { status: error.status },
       );
     }
-    console.error("Error al crear especie:", error);
+    console.error("Error inesperado al crear especie:", error);
     return NextResponse.json(
       { error: "No se pudo crear la especie." },
       { status: 500 },

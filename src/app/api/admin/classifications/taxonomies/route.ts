@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/src/lib/prisma";
 import { getSession } from "@/src/lib/auth";
+import { parseTaxonomiaInput } from "@/src/services/classifications/classification-validation";
+import {
+  crearTaxonomia,
+  listarTaxonomias,
+} from "@/src/services/classifications/classification-server";
+import { ErrorServicio } from "@/src/services/common/errors";
 
 export async function GET() {
   const session = await getSession();
@@ -8,11 +13,7 @@ export async function GET() {
     return NextResponse.json({ error: "No autorizado." }, { status: 401 });
   }
 
-  const taxonomias = await prisma.taxonomia.findMany({
-    orderBy: { nombre_clase: "asc" },
-    include: { _count: { select: { especies: true } } },
-  });
-
+  const taxonomias = await listarTaxonomias();
   return NextResponse.json({ taxonomias });
 }
 
@@ -29,29 +30,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Cuerpo inválido." }, { status: 400 });
   }
 
-  const { nombre_clase } = (body ?? {}) as { nombre_clase?: unknown };
-  const nombre = typeof nombre_clase === "string" ? nombre_clase.trim() : "";
-
-  if (!nombre) {
-    return NextResponse.json(
-      { error: "El nombre de la clase es obligatorio." },
-      { status: 400 },
-    );
+  const parseo = parseTaxonomiaInput(body);
+  if (!parseo.ok) {
+    return NextResponse.json({ error: parseo.error }, { status: 400 });
   }
 
   try {
-    const taxonomia = await prisma.taxonomia.create({
-      data: { nombre_clase: nombre },
-    });
+    const taxonomia = await crearTaxonomia(parseo.valor);
     return NextResponse.json({ taxonomia }, { status: 201 });
   } catch (error) {
-    if ((error as { code?: string }).code === "P2002") {
+    if (error instanceof ErrorServicio) {
       return NextResponse.json(
-        { error: "Ya existe una taxonomía con ese nombre." },
-        { status: 409 },
+        { error: error.message },
+        { status: error.status },
       );
     }
-    console.error("Error al crear taxonomía:", error);
+    console.error("Error inesperado al crear taxonomía:", error);
     return NextResponse.json(
       { error: "No se pudo crear la taxonomía." },
       { status: 500 },
