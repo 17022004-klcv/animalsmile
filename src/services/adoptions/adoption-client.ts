@@ -4,7 +4,6 @@ import type {
   EvaluacionSolicitudInput,
   SeguimientoInput,
   SeguimientoResultadoInput,
-  SolicitanteInput,
   SolicitudInput,
 } from "@/src/services/adoptions/adoption-validation";
 import type {
@@ -13,10 +12,6 @@ import type {
   Solicitante,
   SolicitudAdopcion,
 } from "@/src/types/adopcion";
-
-export interface SolicitanteConConteo extends Solicitante {
-  _count?: { solicitudes: number };
-}
 
 export interface SolicitudConRelaciones extends SolicitudAdopcion {
   solicitante: Solicitante;
@@ -35,26 +30,13 @@ export interface AdopcionConRelaciones extends Adopcion {
 
 const BASE = "/api/admin/adoptions";
 
-export async function obtenerSolicitantes(): Promise<SolicitanteConConteo[]> {
-  const data = await pedir<{ solicitantes: SolicitanteConConteo[] }>(
-    `${BASE}/applicants`,
-  );
-  return data.solicitantes;
-}
-
-export async function crearSolicitante(
-  input: SolicitanteInput,
-): Promise<Solicitante> {
-  const data = await pedir<{ solicitante: Solicitante }>(
-    `${BASE}/applicants`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(input),
-    },
-  );
-  return data.solicitante;
-}
+export {
+  actualizarSolicitante,
+  crearSolicitante,
+  eliminarSolicitante,
+  obtenerSolicitante,
+  obtenerSolicitantes,
+} from "@/src/services/applicants/applicants-client";
 
 export async function obtenerSolicitudes(): Promise<SolicitudConRelaciones[]> {
   const data = await pedir<{ solicitudes: SolicitudConRelaciones[] }>(

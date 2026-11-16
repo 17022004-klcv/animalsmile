@@ -118,27 +118,3 @@ export interface HistorialClinico {
   proxima_cita: string | null;
 }
 
-/** Modelo `Traslado` (tabla `traslados`). */
-export interface Traslado {
-  id_traslado: string;
-  id_animal: string;
-  id_santuario: string;
-  fecha_traslado: string;
-  motivo: string;
-  responsable_transporte: string | null;
-  estado_salida: string | null;
-  estado_llegada: string | null;
-  registrado_por: string | null;
-}
-
-/** Modelo `Santuario` (tabla `santuarios`). */
-export interface Santuario {
-  id_santuario: string;
-  nombre: string;
-  contacto_principal: string | null;
-  telefono: string | null;
-  email: string | null;
-  direccion: string | null;
-  tipo_fauna_permitida: string | null;
-  creado_en: string | null;
-}

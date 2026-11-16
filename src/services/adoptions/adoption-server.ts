@@ -31,11 +31,30 @@ const MAPA_SEGUIMIENTO: Record<string, { status: number; mensaje: string }> = {
   P2025: { status: 404, mensaje: "Seguimiento no encontrado." },
 };
 
+const RELACIONES_SOLICITUD = {
+  solicitante: true,
+  animal: {
+    select: { id_animal: true, nombre: true, codigo_identificador: true },
+  },
+  evaluador: { select: { id_usuario: true, nombre: true, apellido: true } },
+} as const;
+
 export async function listarSolicitantes() {
   return prisma.solicitante.findMany({
     orderBy: { creado_en: "desc" },
     include: { _count: { select: { solicitudes: true } } },
   });
+}
+
+export async function obtenerSolicitante(id: string) {
+  const solicitante = await prisma.solicitante.findUnique({
+    where: { id_solicitante: id },
+    include: { _count: { select: { solicitudes: true } } },
+  });
+  if (!solicitante) {
+    throw new ErrorServicio(404, "Solicitante no encontrado.");
+  }
+  return solicitante;
 }
 
 export async function crearSolicitante(input: SolicitanteInput) {
@@ -50,39 +69,97 @@ export async function crearSolicitante(input: SolicitanteInput) {
   }
 }
 
+export async function actualizarSolicitante(
+  id: string,
+  input: SolicitanteInput,
+) {
+  try {
+    return await prisma.solicitante.update({
+      where: { id_solicitante: id },
+      data: input,
+    });
+  } catch (error) {
+    console.error("Error al actualizar solicitante:", error);
+    throw mapearErrorPrisma(error, MAPA_SOLICITANTE, {
+      status: 500,
+      mensaje: "No se pudo actualizar el solicitante.",
+    });
+  }
+}
+
+export async function eliminarSolicitante(id: string) {
+  try {
+    await prisma.solicitante.delete({ where: { id_solicitante: id } });
+  } catch (error) {
+    console.error("Error al eliminar solicitante:", error);
+    throw mapearErrorPrisma(
+      error,
+      {
+        P2025: {
+          status: 404,
+          mensaje: "Solicitante no encontrado.",
+        },
+        P2003: {
+          status: 409,
+          mensaje:
+            "No se puede eliminar el solicitante porque tiene solicitudes de adopción asociadas.",
+        },
+      },
+      {
+        status: 500,
+        mensaje: "No se pudo eliminar el solicitante.",
+      },
+    );
+  }
+}
+
 export async function listarSolicitudes() {
   return prisma.solicitudAdopcion.findMany({
     orderBy: { fecha_solicitud: "desc" },
-    include: {
-      solicitante: true,
-      animal: { select: { id_animal: true, nombre: true, codigo_identificador: true } },
-      evaluador: { select: { id_usuario: true, nombre: true, apellido: true } },
-    },
+    include: RELACIONES_SOLICITUD,
   });
 }
 
-export async function crearSolicitud(input: SolicitudInput) {
+export async function obtenerSolicitud(id: string) {
+  const solicitud = await prisma.solicitudAdopcion.findUnique({
+    where: { id_solicitud: id },
+    include: RELACIONES_SOLICITUD,
+  });
+  if (!solicitud) {
+    throw new ErrorServicio(404, "Solicitud no encontrada.");
+  }
+  return solicitud;
+}
+
+async function validarRelaciones(idSolicitante: string, idAnimal: string) {
   const animal = await prisma.animal.findUnique({
-    where: { id_animal: input.id_animal },
+    where: { id_animal: idAnimal },
     select: { id_animal: true },
   });
   if (!animal) {
     throw new ErrorServicio(409, "El animal seleccionado no existe.");
   }
   const solicitante = await prisma.solicitante.findUnique({
-    where: { id_solicitante: input.id_solicitante },
+    where: { id_solicitante: idSolicitante },
     select: { id_solicitante: true },
   });
   if (!solicitante) {
     throw new ErrorServicio(409, "El solicitante seleccionado no existe.");
   }
+}
+
+export async function crearSolicitud(input: SolicitudInput) {
+  await validarRelaciones(input.id_solicitante, input.id_animal);
 
   try {
     return await prisma.solicitudAdopcion.create({
       data: {
         id_solicitante: input.id_solicitante,
         id_animal: input.id_animal,
+        ...(input.estado ? { estado: input.estado } : {}),
+        notas_evaluacion: input.notas_evaluacion ?? null,
       },
+      include: RELACIONES_SOLICITUD,
     });
   } catch (error) {
     console.error("Error al crear solicitud:", error);
@@ -90,6 +167,53 @@ export async function crearSolicitud(input: SolicitudInput) {
       status: 500,
       mensaje: "No se pudo registrar la solicitud.",
     });
+  }
+}
+
+export async function actualizarSolicitud(id: string, input: SolicitudInput) {
+  await validarRelaciones(input.id_solicitante, input.id_animal);
+
+  try {
+    return await prisma.solicitudAdopcion.update({
+      where: { id_solicitud: id },
+      data: {
+        id_solicitante: input.id_solicitante,
+        id_animal: input.id_animal,
+        ...(input.estado ? { estado: input.estado } : {}),
+        notas_evaluacion: input.notas_evaluacion ?? null,
+        actualizado_en: new Date(),
+      },
+      include: RELACIONES_SOLICITUD,
+    });
+  } catch (error) {
+    console.error("Error al actualizar solicitud:", error);
+    throw mapearErrorPrisma(error, MAPA_SOLICITUD, {
+      status: 500,
+      mensaje: "No se pudo actualizar la solicitud.",
+    });
+  }
+}
+
+export async function eliminarSolicitud(id: string) {
+  try {
+    await prisma.solicitudAdopcion.delete({ where: { id_solicitud: id } });
+  } catch (error) {
+    console.error("Error al eliminar solicitud:", error);
+    throw mapearErrorPrisma(
+      error,
+      {
+        P2025: { status: 404, mensaje: "Solicitud no encontrada." },
+        P2003: {
+          status: 409,
+          mensaje:
+            "No se puede eliminar la solicitud porque tiene una adopción registrada.",
+        },
+      },
+      {
+        status: 500,
+        mensaje: "No se pudo eliminar la solicitud.",
+      },
+    );
   }
 }
 

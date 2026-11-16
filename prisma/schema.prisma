@@ -7,7 +7,6 @@ datasource db {
   provider = "postgresql"
 }
 
-
 // =============================================================================
 // ENUMS
 // =============================================================================
@@ -15,8 +14,8 @@ datasource db {
 enum RolUsuario {
   Administrador
   Veterinario
-  Encargado_Adopciones
   Voluntario
+  Recepcionista
 }
 
 enum EstadoAnimal {
@@ -84,6 +83,18 @@ enum AccionBitacora {
   Descarga
 }
 
+enum TipoConsulta {
+  Vacunacion
+  Desparasitacion
+  Medicacion
+  Enfermedad
+  Consulta_General
+  Cirugia
+  Examen
+  Seguimiento
+  Otro
+}
+
 // =============================================================================
 // TABLAS DEL NÚCLEO
 // =============================================================================
@@ -100,20 +111,22 @@ model Usuario {
   creado_en     DateTime?  @default(now()) @db.Timestamp()
 
   // Relaciones inversas
-  rescates_creados                Rescate[]                 @relation("RescateCreadoPor")
-  historiales_clinicos            HistorialClinico[]
-  solicitudes_evaluadas           SolicitudAdopcion[]       @relation("SolicitudEvaluador")
-  adopciones_encargadas           Adopcion[]                @relation("AdopcionEncargado")
-  seguimientos_realizados         SeguimientoPostAdopcion[] @relation("SeguimientoRealizadoPor")
-  traslados_registrados           Traslado[]                @relation("TrasladoRegistradoPor")
-  donaciones_registradas          Donacion[]                @relation("DonacionRegistradaPor")
-  bitacoras_acceso                BitacoraAcceso[]
-  bitacoras_rescate               BitacoraRescate[]
-  bitacoras_auditoria             BitacoraAuditoria[]
-  backups_ejecutados              Backup[]                  @relation("BackupEjecutadoPor")
-  bitacoras_backup                BitacoraBackup[]
-  configuraciones_sistema_act     ConfiguracionSistema[]    @relation("ConfigSistemaActualizadoPor")
-  configuraciones_sitio_act       ConfiguracionSitio[]      @relation("ConfigSitioActualizadoPor")
+  rescates_creados            Rescate[]                 @relation("RescateCreadoPor")
+  historiales_clinicos        HistorialClinico[]
+  solicitudes_evaluadas       SolicitudAdopcion[]       @relation("SolicitudEvaluador")
+  adopciones_encargadas       Adopcion[]                @relation("AdopcionEncargado")
+  seguimientos_realizados     SeguimientoPostAdopcion[] @relation("SeguimientoRealizadoPor")
+  traslados_registrados       Traslado[]                @relation("TrasladoRegistradoPor")
+  donaciones_registradas      Donacion[]                @relation("DonacionRegistradaPor")
+  bitacoras_acceso            BitacoraAcceso[]
+  bitacoras_rescate           BitacoraRescate[]
+  bitacoras_auditoria         BitacoraAuditoria[]
+  backups_ejecutados          Backup[]                  @relation("BackupEjecutadoPor")
+  bitacoras_backup            BitacoraBackup[]
+  configuraciones_sistema_act ConfiguracionSistema[]    @relation("ConfigSistemaActualizadoPor")
+  configuraciones_sitio_act   ConfiguracionSitio[]      @relation("ConfigSitioActualizadoPor")
+  consultas_veterinario       Consulta[]                @relation("ConsultaVeterinario")
+  consultas_registradas       Consulta[]                @relation("ConsultaRegistrador")
 
   @@map("usuarios")
 }
@@ -123,6 +136,7 @@ model Taxonomia {
   nombre_clase String @unique @db.VarChar(50)
 
   especies Especie[]
+  vacunas  Vacuna[]
 
   @@map("taxonomias")
 }
@@ -136,6 +150,7 @@ model Especie {
 
   taxonomia Taxonomia @relation(fields: [id_taxonomia], references: [id_taxonomia])
   animales  Animal[]
+  vacunas   Vacuna[]
 
   @@map("especies")
 }
@@ -173,25 +188,26 @@ model Animal {
   foto_principal       String?      @db.VarChar(255)
   creado_en            DateTime?    @default(now()) @db.Timestamp()
 
-  especie            Especie             @relation(fields: [id_especie], references: [id_especie])
-  rescate            Rescate?            @relation(fields: [id_rescate], references: [id_rescate])
-  expediente_medico  ExpedienteMedico?
+  especie              Especie             @relation(fields: [id_especie], references: [id_especie])
+  rescate              Rescate?            @relation(fields: [id_rescate], references: [id_rescate])
+  expediente_medico    ExpedienteMedico?
   solicitudes_adopcion SolicitudAdopcion[]
-  traslados          Traslado[]
+  traslados            Traslado[]
 
   @@map("animales")
 }
 
 model ExpedienteMedico {
-  id_expediente            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_animal                String    @unique @db.Uuid
-  esterilizado             Boolean?  @default(false)
-  fecha_esterilizacion     DateTime? @db.Date
+  id_expediente           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_animal               String    @unique @db.Uuid
+  esterilizado            Boolean?  @default(false)
+  fecha_esterilizacion    DateTime? @db.Date
   observaciones_generales String?   @db.Text
-  actualizado_en           DateTime? @default(now()) @db.Timestamp()
+  actualizado_en          DateTime? @default(now()) @db.Timestamp()
 
-  animal             Animal             @relation(fields: [id_animal], references: [id_animal])
+  animal               Animal             @relation(fields: [id_animal], references: [id_animal])
   historiales_clinicos HistorialClinico[]
+  consultas            Consulta[]
 
   @@map("expedientes_medicos")
 }
@@ -207,10 +223,127 @@ model HistorialClinico {
   tratamiento    String?   @db.Text
   proxima_cita   DateTime? @db.Date
 
-  expediente ExpedienteMedico @relation(fields: [id_expediente], references: [id_expediente])
+  expediente  ExpedienteMedico @relation(fields: [id_expediente], references: [id_expediente])
   veterinario Usuario?         @relation(fields: [id_veterinario], references: [id_usuario])
 
   @@map("historial_clinico")
+}
+
+// =============================================================================
+// CONSULTAS VETERINARIAS Y CATÁLOGOS MÉDICOS
+// =============================================================================
+
+/// Catálogo de vacunas. Si `id_especie` o `id_taxonomia` son nulos la vacuna
+/// aplica a todas las especies o a toda la taxonomía respectivamente.
+model Vacuna {
+  id_vacuna         Int       @id @default(autoincrement())
+  nombre            String    @unique @db.VarChar(120)
+  id_especie        Int?
+  id_taxonomia      Int?
+  descripcion       String?   @db.Text
+  edad_minima_meses Int?
+  intervalo_dias    Int?
+  dosis_recomendada String?   @db.VarChar(120)
+  activa            Boolean?  @default(true)
+  creado_en         DateTime? @default(now()) @db.Timestamp()
+
+  especie      Especie?         @relation(fields: [id_especie], references: [id_especie])
+  taxonomia    Taxonomia?       @relation(fields: [id_taxonomia], references: [id_taxonomia])
+  aplicaciones VacunaAplicada[]
+
+  @@map("vacunas")
+}
+
+/// Registro de una vacuna aplicada a un animal dentro de una consulta.
+model VacunaAplicada {
+  id_aplicacion    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_consulta      String    @db.Uuid
+  id_vacuna        Int
+  lote             String?   @db.VarChar(60)
+  fecha_aplicacion DateTime? @db.Date
+  proxima_dosis    DateTime? @db.Date
+  observaciones    String?   @db.Text
+
+  consulta Consulta @relation(fields: [id_consulta], references: [id_consulta], onDelete: Cascade)
+  vacuna   Vacuna   @relation(fields: [id_vacuna], references: [id_vacuna])
+
+  @@index([id_consulta])
+  @@map("vacunas_aplicadas")
+}
+
+/// Catálogo de medicamentos utilizados en las consultas.
+model Medicamento {
+  id_medicamento Int       @id @default(autoincrement())
+  nombre         String    @unique @db.VarChar(120)
+  descripcion    String?   @db.Text
+  vias           String?   @db.VarChar(150)
+  activo         Boolean?  @default(true)
+  creado_en      DateTime? @default(now()) @db.Timestamp()
+
+  aplicaciones MedicamentoAplicado[]
+
+  @@map("medicamentos")
+}
+
+/// Registro de un medicamento administrado (inyectado u oral) en una consulta.
+model MedicamentoAplicado {
+  id_aplicacion      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_consulta        String    @db.Uuid
+  id_medicamento     Int
+  dosis              String?   @db.VarChar(100)
+  via_administracion String?   @db.VarChar(50)
+  fecha_aplicacion   DateTime? @db.Date
+  observaciones      String?   @db.Text
+
+  consulta    Consulta    @relation(fields: [id_consulta], references: [id_consulta], onDelete: Cascade)
+  medicamento Medicamento @relation(fields: [id_medicamento], references: [id_medicamento])
+
+  @@index([id_consulta])
+  @@map("medicamentos_aplicados")
+}
+
+/// Catálogo de enfermedades que pueden detectarse en un animal.
+model Enfermedad {
+  id_enfermedad        Int       @id @default(autoincrement())
+  nombre               String    @unique @db.VarChar(120)
+  descripcion          String?   @db.Text
+  es_contagiosa        Boolean?  @default(false)
+  requiere_aislamiento Boolean?  @default(false)
+  activa               Boolean?  @default(true)
+  creado_en            DateTime? @default(now()) @db.Timestamp()
+
+  consultas Consulta[]
+
+  @@map("enfermedades")
+}
+
+/// Consulta veterinaria registrada en el expediente médico de un animal.
+model Consulta {
+  id_consulta    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_expediente  String       @db.Uuid
+  id_veterinario String?      @db.Uuid
+  id_enfermedad  Int?
+  fecha_consulta DateTime?    @default(now()) @db.Timestamp()
+  tipo_consulta  TipoConsulta @default(Consulta_General)
+  motivo         String       @db.Text
+  diagnostico    String?      @db.Text
+  tratamiento    String?      @db.Text
+  peso_kg        Float?       @db.DoublePrecision
+  proxima_cita   DateTime?    @db.Date
+  observaciones  String?      @db.Text
+  registrado_por String?      @db.Uuid
+  creado_en      DateTime?    @default(now()) @db.Timestamp()
+
+  expediente   ExpedienteMedico      @relation(fields: [id_expediente], references: [id_expediente], onDelete: Cascade)
+  veterinario  Usuario?              @relation("ConsultaVeterinario", fields: [id_veterinario], references: [id_usuario])
+  registrador  Usuario?              @relation("ConsultaRegistrador", fields: [registrado_por], references: [id_usuario])
+  enfermedad   Enfermedad?           @relation(fields: [id_enfermedad], references: [id_enfermedad])
+  vacunas      VacunaAplicada[]
+  medicamentos MedicamentoAplicado[]
+
+  @@index([id_expediente])
+  @@index([fecha_consulta])
+  @@map("consultas")
 }
 
 model Solicitante {
@@ -231,14 +364,14 @@ model Solicitante {
 }
 
 model SolicitudAdopcion {
-  id_solicitud    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_solicitante  String          @db.Uuid
-  id_animal       String          @db.Uuid
-  fecha_solicitud DateTime?       @default(now()) @db.Timestamp()
-  estado          EstadoSolicitud @default(Pendiente)
-  evaluador_id    String?         @db.Uuid
-  notas_evaluacion String?        @db.Text
-  actualizado_en  DateTime?       @default(now()) @db.Timestamp()
+  id_solicitud     String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitante   String          @db.Uuid
+  id_animal        String          @db.Uuid
+  fecha_solicitud  DateTime?       @default(now()) @db.Timestamp()
+  estado           EstadoSolicitud @default(Pendiente)
+  evaluador_id     String?         @db.Uuid
+  notas_evaluacion String?         @db.Text
+  actualizado_en   DateTime?       @default(now()) @db.Timestamp()
 
   solicitante Solicitante @relation(fields: [id_solicitante], references: [id_solicitante])
   animal      Animal      @relation(fields: [id_animal], references: [id_animal])
@@ -249,15 +382,15 @@ model SolicitudAdopcion {
 }
 
 model Adopcion {
-  id_adopcion           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_solicitud          String    @unique @db.Uuid
-  fecha_adopcion        DateTime  @default(now()) @db.Date
-  contrato_firmado_url  String?   @db.VarChar(255)
-  encargado_id          String?   @db.Uuid
-  creado_en             DateTime? @default(now()) @db.Timestamp()
+  id_adopcion          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id_solicitud         String    @unique @db.Uuid
+  fecha_adopcion       DateTime  @default(now()) @db.Date
+  contrato_firmado_url String?   @db.VarChar(255)
+  encargado_id         String?   @db.Uuid
+  creado_en            DateTime? @default(now()) @db.Timestamp()
 
-  solicitud                SolicitudAdopcion         @relation(fields: [id_solicitud], references: [id_solicitud])
-  encargado                Usuario?                  @relation("AdopcionEncargado", fields: [encargado_id], references: [id_usuario])
+  solicitud                  SolicitudAdopcion         @relation(fields: [id_solicitud], references: [id_solicitud])
+  encargado                  Usuario?                  @relation("AdopcionEncargado", fields: [encargado_id], references: [id_usuario])
   seguimientos_post_adopcion SeguimientoPostAdopcion[]
 
   @@map("adopciones")
@@ -274,21 +407,21 @@ model SeguimientoPostAdopcion {
   evidencias_fotos  Json?
   realizado_por     String?   @db.Uuid
 
-  adopcion  Adopcion @relation(fields: [id_adopcion], references: [id_adopcion])
+  adopcion   Adopcion @relation(fields: [id_adopcion], references: [id_adopcion])
   realizador Usuario? @relation("SeguimientoRealizadoPor", fields: [realizado_por], references: [id_usuario])
 
   @@map("seguimientos_post_adopcion")
 }
 
 model Santuario {
-  id_santuario          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre                String    @db.VarChar(150)
-  contacto_principal    String?   @db.VarChar(100)
-  telefono              String?   @db.VarChar(20)
-  email                 String?   @db.VarChar(150)
-  direccion             String?   @db.Text
-  tipo_fauna_permitida  String?   @db.Text
-  creado_en             DateTime? @default(now()) @db.Timestamp()
+  id_santuario         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre               String    @db.VarChar(150)
+  contacto_principal   String?   @db.VarChar(100)
+  telefono             String?   @db.VarChar(20)
+  email                String?   @db.VarChar(150)
+  direccion            String?   @db.Text
+  tipo_fauna_permitida String?   @db.Text
+  creado_en            DateTime? @default(now()) @db.Timestamp()
 
   traslados Traslado[]
 
@@ -314,18 +447,18 @@ model Traslado {
 }
 
 model Donacion {
-  id_donacion        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  donante_nombre     String?      @default("Anónimo") @db.VarChar(150)
-  donante_email      String?      @db.VarChar(150)
-  tipo               TipoDonacion
-  monto              Decimal?     @db.Decimal(10, 2)
-  metodo_pago        String?      @db.VarChar(50)
-  cantidad           Decimal?     @db.Decimal(10, 2)
-  unidad_medida      String?      @db.VarChar(30)
-  descripcion_detalle String?     @db.Text
-  comprobante_url    String?      @db.VarChar(255)
-  fecha_donacion     DateTime?    @default(now()) @db.Timestamp()
-  registrado_por     String?      @db.Uuid
+  id_donacion         String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  donante_nombre      String?      @default("Anónimo") @db.VarChar(150)
+  donante_email       String?      @db.VarChar(150)
+  tipo                TipoDonacion
+  monto               Decimal?     @db.Decimal(10, 2)
+  metodo_pago         String?      @db.VarChar(50)
+  cantidad            Decimal?     @db.Decimal(10, 2)
+  unidad_medida       String?      @db.VarChar(30)
+  descripcion_detalle String?      @db.Text
+  comprobante_url     String?      @db.VarChar(255)
+  fecha_donacion      DateTime?    @default(now()) @db.Timestamp()
+  registrado_por      String?      @db.Uuid
 
   registrador Usuario? @relation("DonacionRegistradaPor", fields: [registrado_por], references: [id_usuario])
 
@@ -370,14 +503,14 @@ model BitacoraRescate {
 
 model BitacoraAuditoria {
   id_auditoria         String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  id_usuario          String?            @db.Uuid
-  tabla_afectada      String             @db.VarChar(100)
+  id_usuario           String?            @db.Uuid
+  tabla_afectada       String             @db.VarChar(100)
   id_registro_afectado String?            @db.Uuid
-  operacion           OperacionAuditoria
-  datos_anteriores    Json?
-  datos_nuevos        Json?
-  ip_origen           String?            @db.VarChar(45)
-  fecha_evento        DateTime?          @default(now()) @db.Timestamp()
+  operacion            OperacionAuditoria
+  datos_anteriores     Json?
+  datos_nuevos         Json?
+  ip_origen            String?            @db.VarChar(45)
+  fecha_evento         DateTime?          @default(now()) @db.Timestamp()
 
   usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario])
 
@@ -385,20 +518,20 @@ model BitacoraAuditoria {
 }
 
 model Backup {
-  id_backup            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  nombre_archivo       String       @db.VarChar(255)
-  ruta_almacenamiento  String       @db.VarChar(500)
-  tipo_backup          TipoBackup
-  tamano_bytes         BigInt?
-  hash_checksum        String?      @db.VarChar(128)
-  estado               EstadoBackup @default(En_Proceso)
-  ejecutado_por        String?      @db.Uuid
-  es_automatico        Boolean?     @default(true)
-  fecha_inicio         DateTime?    @default(now()) @db.Timestamp()
-  fecha_fin            DateTime?    @db.Timestamp()
-  detalle_error        String?      @db.Text
+  id_backup           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nombre_archivo      String       @db.VarChar(255)
+  ruta_almacenamiento String       @db.VarChar(500)
+  tipo_backup         TipoBackup
+  tamano_bytes        BigInt?
+  hash_checksum       String?      @db.VarChar(128)
+  estado              EstadoBackup @default(En_Proceso)
+  ejecutado_por       String?      @db.Uuid
+  es_automatico       Boolean?     @default(true)
+  fecha_inicio        DateTime?    @default(now()) @db.Timestamp()
+  fecha_fin           DateTime?    @db.Timestamp()
+  detalle_error       String?      @db.Text
 
-  ejecutor        Usuario?         @relation("BackupEjecutadoPor", fields: [ejecutado_por], references: [id_usuario])
+  ejecutor         Usuario?         @relation("BackupEjecutadoPor", fields: [ejecutado_por], references: [id_usuario])
   bitacoras_backup BitacoraBackup[]
 
   @@map("backups")
@@ -407,11 +540,11 @@ model Backup {
 model BitacoraBackup {
   id_bitacora_backup String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   id_backup          String         @db.Uuid
-  id_usuario          String?        @db.Uuid
-  accion              AccionBitacora
-  descripcion         String?        @db.Text
-  ip_origen           String?        @db.VarChar(45)
-  fecha_evento        DateTime?      @default(now()) @db.Timestamp()
+  id_usuario         String?        @db.Uuid
+  accion             AccionBitacora
+  descripcion        String?        @db.Text
+  ip_origen          String?        @db.VarChar(45)
+  fecha_evento       DateTime?      @default(now()) @db.Timestamp()
 
   backup  Backup   @relation(fields: [id_backup], references: [id_backup])
   usuario Usuario? @relation(fields: [id_usuario], references: [id_usuario])

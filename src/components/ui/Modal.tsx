@@ -8,9 +8,16 @@ interface ModalProps {
   onClose: () => void;
   title: React.ReactNode;
   children: React.ReactNode;
+  size?: "md" | "lg" | "xl";
 }
 
-export function Modal({ open, onClose, title, children }: ModalProps) {
+const TAMANOS: Record<NonNullable<ModalProps["size"]>, string> = {
+  md: "max-w-md",
+  lg: "max-w-2xl",
+  xl: "max-w-4xl",
+};
+
+export function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -30,7 +37,7 @@ export function Modal({ open, onClose, title, children }: ModalProps) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white rounded-2xl shadow-xl p-6 space-y-4"
+        className={`w-full ${TAMANOS[size]} bg-white rounded-2xl shadow-xl p-6 space-y-4`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

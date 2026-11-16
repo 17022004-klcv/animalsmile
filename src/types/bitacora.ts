@@ -19,6 +19,19 @@ export interface BitacoraAcceso {
   fecha_evento: string | null;
 }
 
+/** Datos mínimos del usuario relacionado con un acceso. */
+export interface UsuarioAccesoResumen {
+  id_usuario: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+}
+
+/** Acceso a bitácora con su usuario relacionado (relación `usuario`). */
+export interface AccesoConUsuario extends BitacoraAcceso {
+  usuario: UsuarioAccesoResumen | null;
+}
+
 /** Modelo `BitacoraRescate` (tabla `bitacora_rescates`). */
 export interface BitacoraRescate {
   id_bitacora_rescate: string;
@@ -50,7 +63,7 @@ export interface Backup {
   nombre_archivo: string;
   ruta_almacenamiento: string;
   tipo_backup: TipoBackup;
-  tamano_bytes: bigint | null;
+  tamano_bytes: number | null;
   hash_checksum: string | null;
   estado: EstadoBackup;
   ejecutado_por: string | null;
@@ -58,6 +71,11 @@ export interface Backup {
   fecha_inicio: string | null;
   fecha_fin: string | null;
   detalle_error: string | null;
+}
+
+/** Backup con el usuario que lo ejecutó (relación `ejecutor`). */
+export interface BackupConEjecutor extends Backup {
+  ejecutor: UsuarioAccesoResumen | null;
 }
 
 /** Modelo `BitacoraBackup` (tabla `bitacora_backups`). */
@@ -69,4 +87,14 @@ export interface BitacoraBackup {
   descripcion: string | null;
   ip_origen: string | null;
   fecha_evento: string | null;
+}
+
+/** Bitácora de backup con el usuario relacionado. */
+export interface BitacoraBackupConUsuario extends BitacoraBackup {
+  usuario: UsuarioAccesoResumen | null;
+}
+
+/** Backup con su ejecutor y todas sus entradas de bitácora. */
+export interface BackupDetalle extends BackupConEjecutor {
+  bitacoras: BitacoraBackupConUsuario[];
 }

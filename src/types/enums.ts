@@ -1,8 +1,8 @@
 export enum RolUsuario {
   Administrador = "Administrador",
   Veterinario = "Veterinario",
-  Encargado_Adopciones = "Encargado_Adopciones",
   Voluntario = "Voluntario",
+  Recepcionista = "Recepcionista",
 }
 
 export enum EstadoAnimal {
@@ -74,8 +74,8 @@ export enum AccionBitacora {
 export const ROLES_USUARIO = [
   "Administrador",
   "Veterinario",
-  "Encargado_Adopciones",
   "Voluntario",
+  "Recepcionista",
 ] as const;
 
 export const ESTADOS_SOLICITUD = [

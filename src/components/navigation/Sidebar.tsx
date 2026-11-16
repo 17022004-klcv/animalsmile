@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "@/src/context/ThemeContext";
@@ -38,6 +38,7 @@ import {
   Database,
   Sliders,
   Globe,
+  Stethoscope,
 } from "lucide-react";
 
 interface SubOption {
@@ -78,6 +79,11 @@ const menuSections: MenuSection[] = [
         title: "Expedientes",
         href: "/admin/modules/Animals/Records",
         icon: FolderOpen,
+      },
+      {
+        title: "Consultas",
+        href: "/admin/modules/Animals/Inquiries",
+        icon: Stethoscope,
       },
       {
         title: "Bitácora de rescates",
@@ -199,6 +205,40 @@ export default function Sidebar() {
   });
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [perfil, setPerfil] = useState<{
+    nombre: string;
+    apellido: string;
+    email: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+
+    fetch("/api/auth/me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelado || !data?.usuario) return;
+        setPerfil({
+          nombre: data.usuario.nombre,
+          apellido: data.usuario.apellido,
+          email: data.usuario.email,
+        });
+      })
+      .catch(() => {
+        if (!cancelado) setPerfil(null);
+      });
+
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const nombreCompleto = perfil
+    ? `${perfil.nombre} ${perfil.apellido}`.trim()
+    : "Mi perfil";
+  const iniciales = perfil
+    ? `${perfil.nombre.charAt(0)}${perfil.apellido.charAt(0)}`.toUpperCase()
+    : "U";
 
   const toggleSection = (title: string) => {
     if (isCollapsed) {
@@ -397,24 +437,28 @@ export default function Sidebar() {
               isCollapsed ? "justify-center" : "justify-between"
             }`}
           >
-            <div className="flex items-center gap-2.5 overflow-hidden">
+            <Link
+              href="/admin/profile"
+              className="flex items-center gap-2.5 overflow-hidden min-w-0 text-left rounded-md transition hover:opacity-80"
+              title="Ver mi perfil"
+            >
               <div
                 className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                 style={{ backgroundColor: palette.muted }}
               >
-                US
+                {iniciales}
               </div>
               {!isCollapsed && (
                 <div className="truncate">
                   <p className="text-xs font-semibold text-slate-700 truncate">
-                    Usuario Sistema
+                    {nombreCompleto}
                   </p>
                   <p className="text-[10px] text-slate-400 truncate">
-                    admin@animalsmile.org
+                    {perfil?.email ?? "Ver datos de la cuenta"}
                   </p>
                 </div>
               )}
-            </div>
+            </Link>
             {!isCollapsed && (
               <button
                 className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-md transition shrink-0"

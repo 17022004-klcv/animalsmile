@@ -17,6 +17,13 @@ export type ConfiguracionSitioInput = {
   descripcion: string | null;
 };
 
+export type ConfiguracionSitioLoteInput = {
+  configuraciones: ConfiguracionSitioInput[];
+};
+
+const HEX_RE = /^#[0-9a-f]{6}$/i;
+const MAX_VALOR_SITIO = 100_000;
+
 function textoOpcional(valor: unknown): string | null {
   return typeof valor === "string" && valor.trim() ? valor.trim() : null;
 }
@@ -107,4 +114,80 @@ export function parseConfigSitioParcial(
   if (b.descripcion !== undefined) data.descripcion = textoOpcional(b.descripcion);
 
   return { ok: true, valor: data };
+}
+
+/** Valida y normaliza el guardado masivo de la configuración del sitio. */
+export function parseConfiguracionSitioLote(
+  raw: unknown,
+): ResultadoParseo<ConfiguracionSitioLoteInput> {
+  const b = (raw ?? {}) as Record<string, unknown>;
+  const lista = Array.isArray(b.configuraciones)
+    ? b.configuraciones
+    : Array.isArray(raw)
+      ? raw
+      : null;
+
+  if (!lista) {
+    return { ok: false, error: "No se recibieron configuraciones." };
+  }
+
+  if (!lista.length) {
+    return { ok: false, error: "Debes enviar al menos una configuración." };
+  }
+
+  const vistos = new Set<string>();
+  const configuraciones: ConfiguracionSitioInput[] = [];
+
+  for (const item of lista) {
+    const entrada = (item ?? {}) as Record<string, unknown>;
+    const clave = typeof entrada.clave === "string" ? entrada.clave.trim() : "";
+
+    if (!clave) {
+      return { ok: false, error: "Todas las configuraciones deben tener clave." };
+    }
+    if (clave.length > 100) {
+      return {
+        ok: false,
+        error: `La clave "${clave}" supera el máximo de 100 caracteres.`,
+      };
+    }
+    if (vistos.has(clave)) {
+      return { ok: false, error: `La clave "${clave}" está duplicada.` };
+    }
+    vistos.add(clave);
+
+    if (entrada.valor !== undefined && entrada.valor !== null && typeof entrada.valor !== "string") {
+      return {
+        ok: false,
+        error: `El valor de "${clave}" debe ser texto.`,
+      };
+    }
+
+    const valor =
+      typeof entrada.valor === "string" ? entrada.valor : entrada.valor === null ? null : "";
+
+    if (valor && valor.length > MAX_VALOR_SITIO) {
+      return {
+        ok: false,
+        error: `El contenido de "${clave}" es demasiado largo.`,
+      };
+    }
+
+    if (clave.startsWith("color_") && valor && !HEX_RE.test(valor)) {
+      return {
+        ok: false,
+        error: `El color de "${clave}" debe tener formato hexadecimal (#RRGGBB).`,
+      };
+    }
+
+    configuraciones.push({
+      clave,
+      valor,
+      tipo_dato: textoOpcional(entrada.tipo_dato) ?? "string",
+      seccion: textoOpcional(entrada.seccion),
+      descripcion: textoOpcional(entrada.descripcion),
+    });
+  }
+
+  return { ok: true, valor: { configuraciones } };
 }

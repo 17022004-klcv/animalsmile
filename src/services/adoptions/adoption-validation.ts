@@ -1,21 +1,15 @@
 import type { ResultadoParseo } from "@/src/types/common";
 import type { EstadoSolicitud } from "@/src/types/enums";
 import { ESTADOS_SOLICITUD } from "@/src/types/enums";
+import type { SolicitanteInput } from "@/src/types/solicitantes";
 
-export type SolicitanteInput = {
-  documento_identidad: string;
-  nombre: string;
-  apellido: string;
-  email: string;
-  telefono: string;
-  direccion: string;
-  tipo_vivienda: string | null;
-  tiene_mascotas: boolean;
-};
+export type { SolicitanteInput } from "@/src/types/solicitantes";
 
 export type SolicitudInput = {
   id_solicitante: string;
   id_animal: string;
+  estado?: EstadoSolicitud;
+  notas_evaluacion?: string | null;
 };
 
 export type EvaluacionSolicitudInput = {
@@ -77,6 +71,17 @@ export function parseSolicitanteInput(
   const direccion = typeof b.direccion === "string" ? b.direccion.trim() : "";
   if (!direccion) return { ok: false, error: "La dirección es obligatoria." };
 
+  const tieneMascotas = b.tiene_mascotas;
+  if (
+    tieneMascotas !== undefined &&
+    tieneMascotas !== null &&
+    typeof tieneMascotas !== "boolean" &&
+    tieneMascotas !== "true" &&
+    tieneMascotas !== "false"
+  ) {
+    return { ok: false, error: "El valor de mascotas no es válido." };
+  }
+
   return {
     ok: true,
     valor: {
@@ -87,7 +92,10 @@ export function parseSolicitanteInput(
       telefono,
       direccion,
       tipo_vivienda: textoOpcional(b.tipo_vivienda),
-      tiene_mascotas: b.tiene_mascotas === true || b.tiene_mascotas === "true",
+      tiene_mascotas:
+        tieneMascotas === null
+          ? null
+          : tieneMascotas === true || tieneMascotas === "true",
     },
   };
 }
@@ -105,9 +113,26 @@ export function parseSolicitudInput(raw: unknown): ResultadoParseo<SolicitudInpu
   const idAnimal = typeof b.id_animal === "string" ? b.id_animal.trim() : "";
   if (!idAnimal) return { ok: false, error: "Debes seleccionar un animal." };
 
+  const estado = b.estado;
+  if (
+    estado !== undefined &&
+    estado !== null &&
+    (typeof estado !== "string" ||
+      !(ESTADOS_SOLICITUD as readonly string[]).includes(estado))
+  ) {
+    return { ok: false, error: "El estado seleccionado no es válido." };
+  }
+
   return {
     ok: true,
-    valor: { id_solicitante: idSolicitante, id_animal: idAnimal },
+    valor: {
+      id_solicitante: idSolicitante,
+      id_animal: idAnimal,
+      ...(typeof estado === "string"
+        ? { estado: estado as EstadoSolicitud }
+        : {}),
+      notas_evaluacion: textoOpcional(b.notas_evaluacion),
+    },
   };
 }
 

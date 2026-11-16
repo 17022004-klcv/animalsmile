@@ -24,6 +24,13 @@ const MAPA_TRASLADO: Record<string, { status: number; mensaje: string }> = {
   P2025: { status: 404, mensaje: "Traslado no encontrado." },
 };
 
+const RELACIONES_TRASLADO = {
+  animal: {
+    select: { id_animal: true, nombre: true, codigo_identificador: true },
+  },
+  santuario: { select: { id_santuario: true, nombre: true } },
+} as const;
+
 export async function listarSantuarios() {
   return prisma.santuario.findMany({
     orderBy: { nombre: "asc" },
@@ -86,28 +93,43 @@ export async function eliminarSantuario(id: string) {
 export async function listarTraslados() {
   return prisma.traslado.findMany({
     orderBy: { fecha_traslado: "desc" },
-    include: {
-      animal: { select: { id_animal: true, nombre: true, codigo_identificador: true } },
-      santuario: { select: { id_santuario: true, nombre: true } },
-    },
+    include: RELACIONES_TRASLADO,
   });
 }
 
-export async function crearTraslado(input: TrasladoInput, registradoPor: string) {
+export async function obtenerTraslado(id: string) {
+  const traslado = await prisma.traslado.findUnique({
+    where: { id_traslado: id },
+    include: RELACIONES_TRASLADO,
+  });
+  if (!traslado) {
+    throw new ErrorServicio(404, "Traslado no encontrado.");
+  }
+  return traslado;
+}
+
+async function validarRelacionesTraslado(
+  idAnimal: string,
+  idSantuario: string,
+) {
   const animal = await prisma.animal.findUnique({
-    where: { id_animal: input.id_animal },
+    where: { id_animal: idAnimal },
     select: { id_animal: true },
   });
   if (!animal) {
     throw new ErrorServicio(409, "El animal seleccionado no existe.");
   }
   const santuario = await prisma.santuario.findUnique({
-    where: { id_santuario: input.id_santuario },
+    where: { id_santuario: idSantuario },
     select: { id_santuario: true },
   });
   if (!santuario) {
     throw new ErrorServicio(409, "El santuario seleccionado no existe.");
   }
+}
+
+export async function crearTraslado(input: TrasladoInput, registradoPor: string) {
+  await validarRelacionesTraslado(input.id_animal, input.id_santuario);
 
   try {
     return await prisma.$transaction(async (tx) => {
@@ -122,6 +144,7 @@ export async function crearTraslado(input: TrasladoInput, registradoPor: string)
           estado_llegada: input.estado_llegada,
           registrado_por: registradoPor,
         },
+        include: RELACIONES_TRASLADO,
       });
       await tx.animal.update({
         where: { id_animal: input.id_animal },
@@ -134,6 +157,42 @@ export async function crearTraslado(input: TrasladoInput, registradoPor: string)
     throw mapearErrorPrisma(error, MAPA_TRASLADO, {
       status: 500,
       mensaje: "No se pudo registrar el traslado.",
+    });
+  }
+}
+
+export async function actualizarTraslado(
+  id: string,
+  input: TrasladoInput,
+) {
+  await validarRelacionesTraslado(input.id_animal, input.id_santuario);
+
+  try {
+    return await prisma.$transaction(async (tx) => {
+      const traslado = await tx.traslado.update({
+        where: { id_traslado: id },
+        data: {
+          id_animal: input.id_animal,
+          id_santuario: input.id_santuario,
+          fecha_traslado: new Date(input.fecha_traslado),
+          motivo: input.motivo,
+          responsable_transporte: input.responsable_transporte,
+          estado_salida: input.estado_salida,
+          estado_llegada: input.estado_llegada,
+        },
+        include: RELACIONES_TRASLADO,
+      });
+      await tx.animal.update({
+        where: { id_animal: input.id_animal },
+        data: { estado: "Trasladado" },
+      });
+      return traslado;
+    });
+  } catch (error) {
+    console.error("Error al actualizar traslado:", error);
+    throw mapearErrorPrisma(error, MAPA_TRASLADO, {
+      status: 500,
+      mensaje: "No se pudo actualizar el traslado.",
     });
   }
 }

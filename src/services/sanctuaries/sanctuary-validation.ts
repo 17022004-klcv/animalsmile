@@ -1,23 +1,9 @@
 import type { ResultadoParseo } from "@/src/types/common";
+import type { SantuarioInput, SantuarioParcial } from "@/src/types/santuario";
+import type { TrasladoInput } from "@/src/types/traslado";
 
-export type SantuarioInput = {
-  nombre: string;
-  contacto_principal: string | null;
-  telefono: string | null;
-  email: string | null;
-  direccion: string | null;
-  tipo_fauna_permitida: string | null;
-};
-
-export type TrasladoInput = {
-  id_animal: string;
-  id_santuario: string;
-  fecha_traslado: string;
-  motivo: string;
-  responsable_transporte: string | null;
-  estado_salida: string | null;
-  estado_llegada: string | null;
-};
+export type { SantuarioInput } from "@/src/types/santuario";
+export type { TrasladoInput } from "@/src/types/traslado";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -53,9 +39,9 @@ export function parseSantuarioInput(raw: unknown): ResultadoParseo<SantuarioInpu
 /** Valida y normaliza la actualización parcial de un santuario. */
 export function parseSantuarioParcial(
   raw: unknown,
-): ResultadoParseo<Partial<SantuarioInput>> {
+): ResultadoParseo<SantuarioParcial> {
   const b = (raw ?? {}) as Record<string, unknown>;
-  const data: Partial<SantuarioInput> = {};
+  const data: SantuarioParcial = {};
 
   if (b.nombre !== undefined) {
     const nombre = typeof b.nombre === "string" ? b.nombre.trim() : "";

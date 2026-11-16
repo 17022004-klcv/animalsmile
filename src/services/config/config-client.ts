@@ -89,3 +89,40 @@ export async function actualizarConfigSitio(
 export async function eliminarConfigSitio(id: string): Promise<void> {
   await pedir(`${BASE}/site/${id}`, { method: "DELETE" });
 }
+
+export async function guardarConfigSitio(
+  configuraciones: ConfiguracionSitioInput[],
+): Promise<ConfiguracionSitio[]> {
+  const data = await pedir<{ configuraciones: ConfiguracionSitio[] }>(
+    `${BASE}/site`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ configuraciones }),
+    },
+  );
+  return data.configuraciones;
+}
+
+export async function subirImagenesSitio(files: File[]): Promise<string[]> {
+  const formData = new FormData();
+  formData.append("categoria", "site");
+  for (const file of files) {
+    formData.append("files", file);
+  }
+  const data = await pedir<{ urls: string[] }>("/api/admin/upload", {
+    method: "POST",
+    body: formData,
+  });
+  return data.urls ?? [];
+}
+
+export async function obtenerConfiguracionSitioPublica(): Promise<
+  Record<string, string>
+> {
+  const data = await pedir<{ configuracion: Record<string, string> }>(
+    "/api/config/site",
+    { cache: "no-store" },
+  );
+  return data.configuracion ?? {};
+}

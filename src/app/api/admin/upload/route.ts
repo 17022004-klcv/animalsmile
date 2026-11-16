@@ -21,7 +21,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "No hay archivos." }, { status: 400 });
     }
 
-    const dir = path.join(process.cwd(), "public", "uploads", "animals");
+    const categoria = form.get("categoria") === "site" ? "site" : "animals";
+    const dir = path.join(process.cwd(), "public", "uploads", categoria);
     await mkdir(dir, { recursive: true });
 
     const urls: string[] = [];
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
       const name = `${randomUUID()}${ext.toLowerCase()}`;
       const buf = Buffer.from(await f.arrayBuffer());
       await writeFile(path.join(dir, name), buf);
-      urls.push(`/uploads/animals/${name}`);
+      urls.push(`/uploads/${categoria}/${name}`);
     }
 
     return NextResponse.json({ urls });

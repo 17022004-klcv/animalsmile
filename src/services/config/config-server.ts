@@ -71,6 +71,56 @@ export async function listarConfigSitio() {
   });
 }
 
+export async function obtenerConfiguracionSitioPublica() {
+  return prisma.configuracionSitio.findMany({
+    select: {
+      clave: true,
+      valor: true,
+      seccion: true,
+      descripcion: true,
+    },
+    orderBy: [{ seccion: "asc" }, { clave: "asc" }],
+  });
+}
+
+export async function guardarConfigSitio(
+  configuraciones: ConfiguracionSitioInput[],
+  actualizadoPor: string,
+) {
+  const actualizadoEn = new Date();
+
+  try {
+    await prisma.$transaction(
+      configuraciones.map((configuracion) =>
+        prisma.configuracionSitio.upsert({
+          where: { clave: configuracion.clave },
+          create: {
+            ...configuracion,
+            actualizado_por: actualizadoPor,
+            actualizado_en: actualizadoEn,
+          },
+          update: {
+            valor: configuracion.valor,
+            tipo_dato: configuracion.tipo_dato,
+            seccion: configuracion.seccion,
+            descripcion: configuracion.descripcion,
+            actualizado_por: actualizadoPor,
+            actualizado_en: actualizadoEn,
+          },
+        }),
+      ),
+    );
+
+    return listarConfigSitio();
+  } catch (error) {
+    console.error("Error al guardar la configuración del sitio:", error);
+    throw mapearErrorPrisma(error, MAPA_CONFIG, {
+      status: 500,
+      mensaje: "No se pudo guardar la configuración del sitio.",
+    });
+  }
+}
+
 export async function crearConfigSitio(
   input: ConfiguracionSitioInput,
   actualizadoPor: string,

@@ -1,24 +1,31 @@
 import { pedir } from "@/src/services/common/http";
 import type {
+  SantuarioConTraslados,
   SantuarioInput,
+  SantuarioParcial,
+} from "@/src/types/santuario";
+import type {
+  TrasladoConRelaciones,
   TrasladoInput,
-} from "@/src/services/sanctuaries/sanctuary-validation";
-import type { Santuario, Traslado } from "@/src/types/animal";
+} from "@/src/types/traslado";
 
-export interface SantuarioConTraslados extends Santuario {
-  _count?: { traslados: number };
-}
-
-export interface TrasladoConRelaciones extends Traslado {
-  animal: { id_animal: string; nombre: string; codigo_identificador: string };
-  santuario: { id_santuario: string; nombre: string };
-}
+export type { SantuarioConTraslados } from "@/src/types/santuario";
+export type { TrasladoConRelaciones } from "@/src/types/traslado";
 
 const BASE = "/api/admin/sanctuaries";
 
 export async function obtenerSantuarios(): Promise<SantuarioConTraslados[]> {
   const data = await pedir<{ santuarios: SantuarioConTraslados[] }>(BASE);
   return data.santuarios;
+}
+
+export async function obtenerSantuario(
+  id: string,
+): Promise<SantuarioConTraslados> {
+  const data = await pedir<{ santuario: SantuarioConTraslados }>(
+    `${BASE}/${encodeURIComponent(id)}`,
+  );
+  return data.santuario;
 }
 
 export async function crearSantuario(
@@ -34,10 +41,10 @@ export async function crearSantuario(
 
 export async function actualizarSantuario(
   id: string,
-  input: Partial<SantuarioInput>,
+  input: SantuarioParcial,
 ): Promise<SantuarioConTraslados> {
   const data = await pedir<{ santuario: SantuarioConTraslados }>(
-    `${BASE}/${id}`,
+    `${BASE}/${encodeURIComponent(id)}`,
     {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -48,7 +55,7 @@ export async function actualizarSantuario(
 }
 
 export async function eliminarSantuario(id: string): Promise<void> {
-  await pedir(`${BASE}/${id}`, { method: "DELETE" });
+  await pedir(`${BASE}/${encodeURIComponent(id)}`, { method: "DELETE" });
 }
 
 export async function obtenerTraslados(): Promise<TrasladoConRelaciones[]> {
@@ -58,17 +65,46 @@ export async function obtenerTraslados(): Promise<TrasladoConRelaciones[]> {
   return data.traslados;
 }
 
+export async function obtenerTraslado(
+  id: string,
+): Promise<TrasladoConRelaciones> {
+  const data = await pedir<{ traslado: TrasladoConRelaciones }>(
+    `${BASE}/transfers/${encodeURIComponent(id)}`,
+  );
+  return data.traslado;
+}
+
 export async function crearTraslado(
   input: TrasladoInput,
-): Promise<Traslado> {
-  const data = await pedir<{ traslado: Traslado }>(`${BASE}/transfers`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
+): Promise<TrasladoConRelaciones> {
+  const data = await pedir<{ traslado: TrasladoConRelaciones }>(
+    `${BASE}/transfers`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
+  return data.traslado;
+}
+
+export async function actualizarTraslado(
+  id: string,
+  input: TrasladoInput,
+): Promise<TrasladoConRelaciones> {
+  const data = await pedir<{ traslado: TrasladoConRelaciones }>(
+    `${BASE}/transfers/${encodeURIComponent(id)}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(input),
+    },
+  );
   return data.traslado;
 }
 
 export async function eliminarTraslado(id: string): Promise<void> {
-  await pedir(`${BASE}/transfers/${id}`, { method: "DELETE" });
+  await pedir(`${BASE}/transfers/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+  });
 }
