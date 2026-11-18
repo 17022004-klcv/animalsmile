@@ -6,6 +6,8 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { Button } from "@/src/components/ui/Button";
 import { SearchInput, FilterBar } from "@/src/components/ui/Filters";
 import { Modal } from "@/src/components/ui/Modal";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import { formatearEstado, fechaCorta } from "@/src/services/animals/animal-format";
 import { obtenerEspecies } from "@/src/services/classifications/classification-client";
 import {
@@ -85,6 +87,15 @@ export default function ExpedientesPage() {
   const [tratamiento, setTratamiento] = useState("");
   const [proximaCita, setProximaCita] = useState("");
   const [guardandoHistorial, setGuardandoHistorial] = useState(false);
+  const [confirmarEliminar, setConfirmarEliminar] = useState<string | null>(
+    null,
+  );
+  const [eliminandoHistorial, setEliminandoHistorial] = useState(false);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    type: ToastTipo;
+  }>({ open: false, message: "", type: "success" });
 
   const itemsPerPage = 10;
 
@@ -231,10 +242,16 @@ export default function ExpedientesPage() {
           : { ...exp, historiales_clinicos: [] },
       );
       await cargarExpedientes();
+      setToast({
+        open: true,
+        message: "Expediente médico guardado correctamente.",
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar el expediente.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar el expediente.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setGuardando(false);
     }
@@ -243,7 +260,9 @@ export default function ExpedientesPage() {
   const handleAgregarHistorial = async () => {
     if (!expedienteDetalle) return;
     if (!descripcion.trim()) {
-      setError("La descripción de la consulta es obligatoria.");
+      const mensaje = "La descripción de la consulta es obligatoria.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
       return;
     }
     setGuardandoHistorial(true);
@@ -260,29 +279,46 @@ export default function ExpedientesPage() {
       setExpedienteDetalle(exp);
       limpiarFormHistorial();
       await cargarExpedientes();
+      setToast({
+        open: true,
+        message: "Entrada clínica registrada correctamente.",
+        type: "success",
+      });
     } catch (err) {
-      setError(
+      const mensaje =
         err instanceof Error
           ? err.message
-          : "No se pudo registrar la entrada clínica.",
-      );
+          : "No se pudo registrar la entrada clínica.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setGuardandoHistorial(false);
     }
   };
 
-  const handleEliminarHistorial = async (id: string) => {
-    if (!window.confirm("¿Eliminar esta entrada del historial clínico?")) return;
+  const handleEliminarHistorial = async () => {
+    if (!confirmarEliminar) return;
+    const id = confirmarEliminar;
     setError(null);
+    setEliminandoHistorial(true);
     try {
       await eliminarHistorial(id);
       const exp = await obtenerExpediente(animalSeleccionado!.id_animal);
       setExpedienteDetalle(exp);
       await cargarExpedientes();
+      setToast({
+        open: true,
+        message: "Entrada del historial clínico eliminada correctamente.",
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar el registro.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo eliminar el registro.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
+    } finally {
+      setEliminandoHistorial(false);
+      setConfirmarEliminar(null);
     }
   };
 
@@ -321,9 +357,9 @@ export default function ExpedientesPage() {
     "w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[var(--color-primary)] transition";
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
       {/* Marco Principal */}
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
         {/* Cabecera */}
         <div className="flex items-center justify-between shrink-0">
           <div>
@@ -343,7 +379,7 @@ export default function ExpedientesPage() {
         </div>
 
         {/* Búsqueda */}
-        <div className="flex items-center gap-3 mt-4 shrink-0">
+        <div className="anim-fade-up delay-2 flex items-center gap-3 mt-4 shrink-0">
           <SearchInput
             value={searchTerm}
             onChange={(e) => {
@@ -390,7 +426,7 @@ export default function ExpedientesPage() {
         )}
 
         {/* Tabla con scroll interno */}
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
+        <div className="anim-fade-up delay-3 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
           <div className="flex-1 overflow-y-auto">
             {cargando ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -478,7 +514,7 @@ export default function ExpedientesPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => abrirDetalle(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.primary;
@@ -496,7 +532,7 @@ export default function ExpedientesPage() {
 
                             <button
                               onClick={() => abrirDetalle(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.secondary;
@@ -514,7 +550,7 @@ export default function ExpedientesPage() {
 
                             <button
                               onClick={() => descargarFicha(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.dark;
@@ -552,7 +588,7 @@ export default function ExpedientesPage() {
         </div>
 
         {/* Paginación */}
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        <div className="anim-fade-up delay-4 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             mostrando {filteredData.length > 0 ? startIndex + 1 : 0}-
             {Math.min(startIndex + itemsPerPage, filteredData.length)} de{" "}
@@ -563,7 +599,7 @@ export default function ExpedientesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronLeft size={16} />
             </button>
@@ -575,7 +611,7 @@ export default function ExpedientesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronRight size={16} />
             </button>
@@ -717,9 +753,9 @@ export default function ExpedientesPage() {
                               </span>
                               <button
                                 onClick={() =>
-                                  handleEliminarHistorial(h.id_historial)
+                                  setConfirmarEliminar(h.id_historial)
                                 }
-                                className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                                className="anim-press p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                                 title="Eliminar entrada"
                               >
                                 <Trash2 size={13} />
@@ -857,6 +893,23 @@ export default function ExpedientesPage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={confirmarEliminar !== null}
+        title="Eliminar entrada clínica"
+        description="¿Estás seguro de eliminar esta entrada del historial clínico? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={eliminandoHistorial}
+        onConfirm={handleEliminarHistorial}
+        onCancel={() => setConfirmarEliminar(null)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

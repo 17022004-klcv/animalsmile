@@ -1,4 +1,6 @@
 import type { EstadoSolicitud } from "@/src/types/enums";
+import type { Usuario } from "@/src/types/usuario";
+import type { SolicitudConRelaciones } from "@/src/types/solicitud";
 
 /** Modelo `Solicitante` (tabla `solicitantes`). */
 export interface Solicitante {
@@ -48,3 +50,45 @@ export interface SeguimientoPostAdopcion {
   evidencias_fotos: string[] | null;
   realizado_por: string | null;
 }
+
+export interface AdopcionConRelaciones extends Adopcion {
+  solicitud: SolicitudConRelaciones;
+  encargado: Pick<Usuario, "id_usuario" | "nombre" | "apellido"> | null;
+  _count?: { seguimientos_post_adopcion: number };
+}
+
+export type AdopcionDetalle = AdopcionConRelaciones;
+
+export type AdopcionInput = {
+  id_solicitud: string;
+  fecha_adopcion: string;
+  contrato_firmado_url: string | null;
+};
+
+export type AdopcionParcial = Partial<
+  Pick<Adopcion, "fecha_adopcion" | "contrato_firmado_url">
+>;
+
+export interface SeguimientoConRelaciones extends SeguimientoPostAdopcion {
+  adopcion: AdopcionConRelaciones;
+  realizador: Pick<Usuario, "id_usuario" | "nombre" | "apellido"> | null;
+}
+
+export type SeguimientoDetalle = SeguimientoConRelaciones;
+
+export type SeguimientoInput = {
+  id_adopcion: string;
+  num_mes: number;
+  fecha_programada: string;
+};
+
+export type SeguimientoProgramacionParcial = Partial<
+  Pick<SeguimientoInput, "num_mes" | "fecha_programada">
+>;
+
+export type SeguimientoResultadoInput = {
+  fecha_realizada: string;
+  estado_evaluacion: string | null;
+  observaciones: string | null;
+  evidencias_fotos: string[] | null;
+};

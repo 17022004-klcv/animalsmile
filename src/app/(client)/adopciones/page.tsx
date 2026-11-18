@@ -24,6 +24,7 @@ import {
   leerConfiguracionSitio,
   parsearGaleriaSitio,
 } from "@/src/services/config/site-config";
+import { Validaciones } from "@/src/utils/validaciones";
 import type { AnimalDisponibleDTO } from "@/src/app/api/adoptions/route";
 
 interface SolicitudResultado {
@@ -44,7 +45,7 @@ interface SolicitudResultado {
 export default function AdopcionesPage() {
   const { sitePalette, sitioConfig } = useSiteTheme();
   const leer = (clave: string) => leerConfiguracionSitio(sitioConfig, clave);
-  const imagenes = parsearGaleriaSitio(leer("adopciones_imagenes"));
+  const imagenes = parsearGaleriaSitio(leer("adopciones_hero_imagenes"));
 
   // Estados de animales y filtros
   const [animales, setAnimales] = useState<AnimalDisponibleDTO[]>([]);
@@ -184,6 +185,37 @@ export default function AdopcionesPage() {
       return;
     }
 
+    const errNombre = Validaciones.validarSoloLetras(formData.nombre, "Nombre", {
+      requerido: true,
+      maxLength: 50,
+    });
+    if (errNombre) {
+      setErrorEnvio(errNombre);
+      return;
+    }
+
+    const errApellido = Validaciones.validarSoloLetras(
+      formData.apellido,
+      "Apellido",
+      { requerido: true, maxLength: 50 },
+    );
+    if (errApellido) {
+      setErrorEnvio(errApellido);
+      return;
+    }
+
+    const errEmail = Validaciones.validarEmail(formData.email, true);
+    if (errEmail) {
+      setErrorEnvio(errEmail);
+      return;
+    }
+
+    const errTelefono = Validaciones.validarTelefono(formData.telefono, true);
+    if (errTelefono) {
+      setErrorEnvio(errTelefono);
+      return;
+    }
+
     setEnviando(true);
     setErrorEnvio(null);
 
@@ -232,9 +264,9 @@ export default function AdopcionesPage() {
       <section className="relative w-full bg-[#1e2749] text-white pt-24 md:pt-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10 pb-14">
           {/* Lado Izquierdo: Titular */}
-          <div className="md:col-span-7 space-y-5">
+          <div className="md:col-span-7 space-y-5 anim-fade-up">
             <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold anim-fade-in delay-1"
               style={{
                 color: sitePalette.primary || "#f43f5e",
                 backgroundColor: `${sitePalette.primary || "#f43f5e"}1A`,
@@ -242,46 +274,31 @@ export default function AdopcionesPage() {
               }}
             >
               <Heart size={15} className="fill-current animate-pulse" />
-              <span>
-                {leer("adopciones_subtitulo") ||
-                  "Adopción Responsable • Sin Costo"}
-              </span>
+              <span>{leer("adopciones_hero_subtitulo")}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-              {leer("adopciones_titulo") ? (
-                <>
-                  {leer("adopciones_titulo")}{" "}
-                  <span className="text-emerald-400">
-                    en {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              ) : (
-                <>
-                  Encuentra a tu compañero en{" "}
-                  <span className="text-emerald-400">
-                    {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              )}
+              {leer("adopciones_hero_titulo")}{" "}
+              <span className="text-emerald-400">
+                {leer("sitio_nombre") || "AnimalSmile"}
+              </span>
             </h1>
 
-            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed">
-              {leer("adopciones_descripcion") ||
-                "Cada animal rescatado sueña con una familia para siempre. Explora nuestros rescatados disponibles, inicia tu solicitud y dales la segunda oportunidad que tanto merecen."}
+            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed whitespace-pre-line">
+              {leer("adopciones_hero_descripcion")}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <a
                 href="#catalogo-animales"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-emerald-500 hover:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 transition-all hover:-translate-y-0.5 anim-press"
               >
                 <PawPrint size={18} />
                 <span>Ver Mascotas Disponibles</span>
               </a>
               <a
                 href="#proceso-adopcion"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5 anim-press"
               >
                 <FileText size={18} />
                 <span>Requisitos de Adopción</span>
@@ -291,8 +308,8 @@ export default function AdopcionesPage() {
 
           {/* Lado Derecho: Avatar Ilustrado / Imagen de Mascota */}
           <div className="md:col-span-5 flex justify-center md:justify-end">
-            <div className="relative w-64 h-64 sm:w-72 sm:h-72">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-2xl" />
+            <div className="relative w-64 h-64 sm:w-72 sm:h-72 anim-zoom-img anim-fade-up delay-2">
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-2xl anim-pulse" />
               {imagenes[0] ? (
                 <img
                   src={imagenes[0]}
@@ -338,7 +355,7 @@ export default function AdopcionesPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-14">
           {/* BARRA DE BENEFICIOS Y COMPROMISOS */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-1">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                 <ShieldCheck size={22} />
               </div>
@@ -350,7 +367,7 @@ export default function AdopcionesPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-2">
               <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center shrink-0">
                 <CheckCircle2 size={22} />
               </div>
@@ -362,7 +379,7 @@ export default function AdopcionesPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
                 <Heart size={22} />
               </div>
@@ -376,7 +393,7 @@ export default function AdopcionesPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-4">
               <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
                 <Clock size={22} />
               </div>
@@ -393,23 +410,21 @@ export default function AdopcionesPage() {
 
           {/* CATÁLOGO DE ANIMALES DISPONIBLES */}
           <div id="catalogo-animales" className="space-y-8">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 anim-fade-up">
               <div className="space-y-2">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
                   <Sparkles size={14} />
                   <span>Nuestros Huéspedes</span>
                 </div>
                 <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-                  Animales disponibles para adopción
+                  {leer("adopciones_catalogo_titulo")}
                 </h2>
-                <p className="text-slate-600 text-xs sm:text-sm max-w-xl">
-                  Haz clic en el botón de adoptar de la mascota que toque tu
-                  corazón para iniciar el formulario con los requisitos
-                  necesarios.
+                <p className="text-slate-600 text-xs sm:text-sm max-w-xl whitespace-pre-line">
+                  {leer("adopciones_catalogo_descripcion")}
                 </p>
               </div>
 
-              <div className="text-xs font-bold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 self-start md:self-auto shadow-sm">
+              <div className="text-xs font-bold text-slate-500 bg-slate-50 px-4 py-2 rounded-xl border border-slate-200 self-start md:self-auto shadow-sm anim-fade-in delay-5">
                 Mostrando{" "}
                 <span className="text-emerald-600 font-extrabold">
                   {animalesFiltrados.length}
@@ -419,7 +434,7 @@ export default function AdopcionesPage() {
             </div>
 
             {/* BARRA DE FILTROS Y BÚSQUEDA */}
-            <div className="bg-slate-50/70 rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-4">
+            <div className="bg-slate-50/70 rounded-3xl p-5 border border-slate-200/80 shadow-sm space-y-4 anim-fade-up delay-1">
               <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
                 {/* Buscador */}
                 <div className="md:col-span-5 relative">
@@ -437,7 +452,7 @@ export default function AdopcionesPage() {
                   {busqueda && (
                     <button
                       onClick={() => setBusqueda("")}
-                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 anim-press"
                     >
                       <X size={16} />
                     </button>
@@ -456,7 +471,7 @@ export default function AdopcionesPage() {
                       <button
                         key={tab.id}
                         onClick={() => setFiltroEspecie(tab.id)}
-                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                         className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all anim-press ${
                           filtroEspecie === tab.id
                             ? "bg-emerald-600 text-white shadow-sm"
                             : "text-slate-600 hover:text-slate-900"
@@ -503,7 +518,7 @@ export default function AdopcionesPage() {
                 </p>
               </div>
             ) : animalesFiltrados.length === 0 ? (
-              <div className="bg-slate-50 rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-4">
+              <div className="bg-slate-50 rounded-3xl p-12 text-center border border-slate-200/80 shadow-sm space-y-4 anim-hover-lift anim-scale-in delay-6">
                 <div className="w-16 h-16 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto">
                   <Search size={32} />
                 </div>
@@ -521,7 +536,7 @@ export default function AdopcionesPage() {
                     setFiltroEnergia("todos");
                     setFiltroEdad("todos");
                   }}
-                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition"
+                  className="px-4 py-2 bg-emerald-600 text-white font-bold text-xs rounded-xl hover:bg-emerald-700 transition anim-press"
                 >
                   Limpiar filtros
                 </button>
@@ -531,10 +546,10 @@ export default function AdopcionesPage() {
                 {animalesFiltrados.map((animal) => (
                   <div
                     key={animal.id_animal}
-                    className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden"
+                    className="group relative bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 flex flex-col justify-between overflow-hidden anim-hover-lift anim-fade-up"
                   >
                     {/* IMAGEN DE LA TARJETA */}
-                    <div className="relative h-64 overflow-hidden bg-slate-100">
+                    <div className="relative h-64 overflow-hidden bg-slate-100 anim-zoom-img">
                       <img
                         src={
                           animal.foto_principal ||
@@ -643,7 +658,7 @@ export default function AdopcionesPage() {
                         <button
                           type="button"
                           onClick={() => abrirModalAdopcion(animal)}
-                          className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all active:scale-[0.98] group-hover:shadow-emerald-500/30"
+                          className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl font-black text-xs text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md shadow-emerald-600/20 hover:shadow-lg transition-all active:scale-[0.98] group-hover:shadow-emerald-500/30 anim-press"
                         >
                           <Heart size={16} className="fill-white" />
                           <span>Adoptar a {animal.nombre}</span>
@@ -665,22 +680,21 @@ export default function AdopcionesPage() {
         className="w-full bg-slate-900 text-white py-16 md:py-20"
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="max-w-2xl space-y-3">
+          <div className="max-w-2xl space-y-3 anim-fade-up">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
               <Sparkles size={14} />
               <span>Transparente y Solidario</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">
-              ¿Cómo funciona el proceso de adopción?
+              {leer("adopciones_proceso_titulo")}
             </h2>
-            <p className="text-slate-300 text-sm md:text-base leading-relaxed">
-              Nuestro objetivo es asegurar que cada rescate encuentre un hogar
-              definitivo y amoroso. El trámite se completa en 4 sencillos pasos.
+            <p className="text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-line">
+              {leer("adopciones_proceso_descripcion")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm">
+            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm anim-hover-lift anim-fade-up delay-1">
               <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm">
                 01
               </div>
@@ -693,7 +707,7 @@ export default function AdopcionesPage() {
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm">
+            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm anim-hover-lift anim-fade-up delay-2">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-sm">
                 02
               </div>
@@ -707,7 +721,7 @@ export default function AdopcionesPage() {
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm">
+            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm anim-hover-lift anim-fade-up delay-3">
               <div className="w-10 h-10 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-black text-sm">
                 03
               </div>
@@ -720,7 +734,7 @@ export default function AdopcionesPage() {
               </p>
             </div>
 
-            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm">
+            <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-6 space-y-3 backdrop-blur-sm anim-hover-lift anim-fade-up delay-4">
               <div className="w-10 h-10 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-black text-sm">
                 04
               </div>
@@ -740,20 +754,20 @@ export default function AdopcionesPage() {
       {/* MODAL DE ADOPCIÓN CON REQUISITOS Y FORMULARIO (Estado PENDIENTE) */}
       {/* ========================================================================= */}
       {modalAbierto && animalSeleccionado && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 anim-fade-in">
+          <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 anim-scale-in delay-1">
             {/* Cabecera del Modal */}
             <div className="bg-gradient-to-r from-[#1e2749] to-slate-800 text-white p-6 relative">
               <button
                 type="button"
                 onClick={cerrarModal}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white/80 hover:text-white hover:bg-white/20 flex items-center justify-center transition"
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white/80 hover:text-white hover:bg-white/20 flex items-center justify-center transition anim-press"
               >
                 <X size={18} />
               </button>
 
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/20 shrink-0 bg-slate-700">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-white/20 shrink-0 bg-slate-700 anim-zoom-img">
                   <img
                     src={
                       animalSeleccionado.foto_principal ||
@@ -861,7 +875,7 @@ export default function AdopcionesPage() {
                   <button
                     type="button"
                     onClick={cerrarModal}
-                    className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition"
+                    className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition anim-press"
                   >
                     Entendido y Regresar al Catálogo
                   </button>
@@ -1153,30 +1167,30 @@ export default function AdopcionesPage() {
 
                   {/* BOTÓN DE ENVÍO */}
                   <div className="pt-4 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={cerrarModal}
-                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={enviando}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition disabled:opacity-50"
-                    >
-                      {enviando ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" />
-                          <span>Enviando solicitud...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send size={15} />
-                          <span>Confirmar y Enviar Solicitud</span>
-                        </>
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={cerrarModal}
+                        className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition anim-press"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={enviando}
+                        className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md transition disabled:opacity-50 anim-press"
+                      >
+                        {enviando ? (
+                          <>
+                            <Loader2 size={16} className="animate-spin" />
+                            <span>Enviando solicitud...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send size={15} />
+                            <span>Confirmar y Enviar Solicitud</span>
+                          </>
+                        )}
+                      </button>
                   </div>
                 </form>
               )}

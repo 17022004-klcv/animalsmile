@@ -176,8 +176,8 @@ export default function AccesosSistemaPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
         <div className="flex items-center justify-between shrink-0 gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">
@@ -212,7 +212,7 @@ export default function AccesosSistemaPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 my-4 shrink-0">
+        <div className="anim-fade-up delay-2 flex flex-wrap items-center gap-3 my-4 shrink-0">
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase">
             <SlidersHorizontal size={13} />
             Filtros
@@ -275,7 +275,7 @@ export default function AccesosSistemaPage() {
           {hayFiltros && (
             <button
               onClick={limpiarFiltros}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
+              className="anim-press flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
               title="Limpiar filtros"
             >
               <X size={13} />
@@ -291,7 +291,7 @@ export default function AccesosSistemaPage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+        <div className="anim-fade-up delay-3 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
           {cargando ? (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
               <Loader2 size={22} className="animate-spin" />
@@ -396,7 +396,7 @@ export default function AccesosSistemaPage() {
                         <td className="px-4 py-2.5 text-right whitespace-nowrap">
                           <button
                             onClick={() => handleVerDetalle(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.primary;
@@ -432,7 +432,7 @@ export default function AccesosSistemaPage() {
           )}
         </div>
 
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        <div className="anim-fade-up delay-4 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             Mostrando {resumen.total} registro
             {resumen.total === 1 ? "" : "s"} (límite 500)
@@ -554,7 +554,7 @@ export default function AccesosSistemaPage() {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
+                className="anim-press px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
                 style={{ backgroundColor: palette.primary }}
               >
                 Cerrar

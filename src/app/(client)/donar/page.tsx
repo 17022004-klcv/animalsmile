@@ -33,6 +33,7 @@ import {
   leerConfiguracionSitio,
   parsearGaleriaSitio,
 } from "@/src/services/config/site-config";
+import { Validaciones } from "@/src/utils/validaciones";
 
 interface DonacionResultado {
   id_donacion: string;
@@ -47,7 +48,7 @@ interface DonacionResultado {
 export default function DonarPage() {
   const { sitePalette, sitioConfig } = useSiteTheme();
   const leer = (clave: string) => leerConfiguracionSitio(sitioConfig, clave);
-  const imagenes = parsearGaleriaSitio(leer("donar_imagenes"));
+  const imagenes = parsearGaleriaSitio(leer("donar_hero_imagenes"));
 
   // Estados del Modal de Donación
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -72,11 +73,7 @@ export default function DonarPage() {
   const handleNumeroTarjetaChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    let valor = e.target.value.replace(/\D/g, "");
-    if (valor.length > 16) valor = valor.slice(0, 16);
-    // Agrupar en bloques de 4
-    const formateado = valor.match(/.{1,4}/g)?.join(" ") || valor;
-    setNumeroTarjeta(formateado);
+    setNumeroTarjeta(Validaciones.formatearTarjeta(e.target.value));
   };
 
   const handleVencimientoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,8 +88,7 @@ export default function DonarPage() {
   const handleCodigoSeguridadChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const valor = e.target.value.replace(/\D/g, "").slice(0, 4);
-    setCodigoSeguridad(valor);
+    setCodigoSeguridad(Validaciones.formatearCVV(e.target.value));
   };
 
   const abrirModalDonacion = (montoInicial?: number) => {
@@ -118,21 +114,32 @@ export default function DonarPage() {
   const handleSubmitDonacion = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!nombreTitular.trim()) {
-      setErrorEnvio("Por favor ingresa el nombre del dueño de la tarjeta.");
+    const errNombre = Validaciones.validarSoloLetras(
+      nombreTitular,
+      "Nombre del dueño de la tarjeta",
+      { requerido: true, maxLength: 60 },
+    );
+    if (errNombre) {
+      setErrorEnvio(errNombre);
       return;
     }
-    const digitos = numeroTarjeta.replace(/\D/g, "");
-    if (digitos.length < 15 || digitos.length > 16) {
-      setErrorEnvio("El número de tarjeta no es válido (15 o 16 dígitos).");
+    const errTarjeta = Validaciones.validarTarjeta(numeroTarjeta, true);
+    if (errTarjeta) {
+      setErrorEnvio(errTarjeta);
       return;
     }
     if (!/^\d{2}\/\d{2}$/.test(vencimiento)) {
       setErrorEnvio("La fecha de vencimiento debe tener formato MM/AA.");
       return;
     }
-    if (codigoSeguridad.length < 3) {
-      setErrorEnvio("El código de seguridad (CVV) debe tener 3 o 4 dígitos.");
+    const errCVV = Validaciones.validarCVV(codigoSeguridad, true);
+    if (errCVV) {
+      setErrorEnvio(errCVV);
+      return;
+    }
+    const errEmail = Validaciones.validarEmail(emailDonante, false);
+    if (errEmail) {
+      setErrorEnvio(errEmail);
       return;
     }
     if (isNaN(montoFinal) || montoFinal <= 0) {
@@ -180,9 +187,9 @@ export default function DonarPage() {
       <section className="relative w-full bg-[#1e2749] text-white pt-24 md:pt-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10 pb-14">
           {/* Lado Izquierdo: Titular */}
-          <div className="md:col-span-7 space-y-5">
+          <div className="md:col-span-7 space-y-5 anim-fade-up">
             <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold anim-fade-in delay-1"
               style={{
                 color: sitePalette.primary || "#f43f5e",
                 backgroundColor: `${sitePalette.primary || "#f43f5e"}1A`,
@@ -190,46 +197,32 @@ export default function DonarPage() {
               }}
             >
               <Heart size={15} className="fill-current animate-pulse" />
-              <span>
-                {leer("donar_subtitulo") || "Tu ayuda transforma vidas"}
-              </span>
+              <span>{leer("donar_hero_subtitulo")}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-              {leer("donar_titulo") ? (
-                <>
-                  {leer("donar_titulo")}{" "}
-                  <span className="text-emerald-400">
-                    en {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              ) : (
-                <>
-                  Dales una mano solidaria en{" "}
-                  <span className="text-emerald-400">
-                    {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              )}
+              {leer("donar_hero_titulo")}{" "}
+              <span className="text-emerald-400">
+                {leer("sitio_nombre") || "AnimalSmile"}
+              </span>
             </h1>
 
-            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed">
-              {leer("donar_descripcion") ||
-                "Gracias a tu apoyo podemos alimentar a cientos de animales rescatados, cubrir cirugías de emergencia, tratamientos médicos y asegurar instalaciones dignas mientras esperan ser adoptados."}
+            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed whitespace-pre-line">
+              {leer("donar_hero_descripcion")}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <button
                 type="button"
                 onClick={() => abrirModalDonacion(25)}
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-black text-sm bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-black text-sm bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 anim-press"
               >
                 <CreditCard size={18} />
                 <span>Donar con Tarjeta Ahora</span>
               </button>
               <a
                 href="#donaciones-especie"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5 anim-press"
               >
                 <Package size={18} />
                 <span>Donaciones en Especie</span>
@@ -239,8 +232,8 @@ export default function DonarPage() {
 
           {/* Lado Derecho: Avatar Ilustrado / Mascota */}
           <div className="md:col-span-5 flex justify-center md:justify-end">
-            <div className="relative w-64 h-64 sm:w-80 sm:h-80">
-              <div className="absolute inset-0 bg-rose-500/20 rounded-full blur-2xl" />
+            <div className="relative w-64 h-64 sm:w-80 sm:h-80 anim-zoom-img anim-fade-up delay-2">
+              <div className="absolute inset-0 bg-rose-500/20 rounded-full blur-2xl anim-pulse" />
               {imagenes[0] ? (
                 <img
                   src={imagenes[0]}
@@ -286,7 +279,7 @@ export default function DonarPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-20">
           {/* BARRA DE IMPACTO DE LAS DONACIONES */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-1">
               <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                 <Utensils size={22} />
               </div>
@@ -300,7 +293,7 @@ export default function DonarPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-2">
               <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
                 <Pill size={22} />
               </div>
@@ -314,7 +307,7 @@ export default function DonarPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-3">
               <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center shrink-0">
                 <Stethoscope size={22} />
               </div>
@@ -328,7 +321,7 @@ export default function DonarPage() {
               </div>
             </div>
 
-            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3">
+            <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/80 shadow-sm flex items-center gap-3 anim-hover-lift anim-fade-up delay-4">
               <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
                 <ShieldCheck size={22} />
               </div>
@@ -342,8 +335,8 @@ export default function DonarPage() {
           </div>
 
           {/* 2. SECCIÓN: DONACIÓN FINANCIERA DESTACADA */}
-          <section className="bg-gradient-to-br from-slate-900 to-[#1e2749] text-white rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+          <section className="bg-gradient-to-br from-slate-900 to-[#1e2749] text-white rounded-3xl p-8 md:p-12 shadow-2xl relative overflow-hidden anim-fade-up">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-rose-500/10 rounded-full blur-3xl pointer-events-none anim-float" />
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
               <div className="lg:col-span-7 space-y-4">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-500/20 text-rose-300 text-xs font-bold border border-rose-500/30">
@@ -351,13 +344,10 @@ export default function DonarPage() {
                   <span>Donaciones Financieras Directas</span>
                 </div>
                 <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                  Haz una donación en línea de forma segura
+                  {leer("donar_financiera_titulo")}
                 </h2>
-                <p className="text-slate-300 text-sm leading-relaxed max-w-xl">
-                  Tus aportes monetarios nos permiten adquirir insumos de
-                  urgencia, financiar cirugías de traumatología, costear pruebas
-                  de laboratorio y mantener al día las instalaciones de nuestros
-                  santuarios.
+                <p className="text-slate-300 text-sm leading-relaxed max-w-xl whitespace-pre-line">
+                  {leer("donar_financiera_descripcion")}
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 pt-2 text-xs text-slate-300">
@@ -377,7 +367,7 @@ export default function DonarPage() {
               </div>
 
               {/* Tarjeta de Donación Rápida con botón que abre el modal */}
-              <div className="lg:col-span-5 bg-white text-slate-800 rounded-3xl p-6 shadow-xl space-y-5">
+              <div className="lg:col-span-5 bg-white text-slate-800 rounded-3xl p-6 shadow-xl space-y-5 anim-fade-up delay-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-extrabold text-slate-900 text-base">
                     Selecciona tu aporte:
@@ -397,7 +387,7 @@ export default function DonarPage() {
                         setMontoSeleccionado(monto);
                         setMontoPersonalizado("");
                       }}
-                      className={`py-2.5 rounded-xl text-xs font-black transition-all ${
+                      className={`py-2.5 rounded-xl text-xs font-black transition-all anim-press ${
                         montoSeleccionado === monto && !montoPersonalizado
                           ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
                           : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -427,7 +417,7 @@ export default function DonarPage() {
                 <button
                   type="button"
                   onClick={() => abrirModalDonacion(montoFinal)}
-                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl font-black text-sm text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5"
+                  className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl font-black text-sm text-white bg-gradient-to-r from-rose-500 to-rose-600 hover:from-rose-600 hover:to-rose-700 shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 anim-press"
                 >
                   <CreditCard size={18} />
                   <span>Donar ${montoFinal} con Tarjeta</span>
@@ -445,20 +435,17 @@ export default function DonarPage() {
                 <span>Ayuda Material e Insumos</span>
               </div>
               <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-                ¿Qué tipo de donaciones en especie recibimos?
+                {leer("donar_especie_titulo")}
               </h2>
-              <p className="text-slate-600 text-sm leading-relaxed">
-                Además de las donaciones monetarias, recibimos continuamente
-                insumos esenciales para el mantenimiento y recuperación de
-                nuestros animales. Todo aporte, nuevo o en buen estado, es
-                recibido con gratitud.
+              <p className="text-slate-600 text-sm leading-relaxed whitespace-pre-line">
+                {leer("donar_especie_descripcion")}
               </p>
             </div>
 
             {/* Grilla Informativa de las 4 Categorías en Especie */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Card 1: Alimentos */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group anim-hover-lift anim-fade-up delay-1">
                 <div className="space-y-4">
                   <div className="w-14 h-14 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Utensils size={28} />
@@ -500,7 +487,7 @@ export default function DonarPage() {
               </div>
 
               {/* Card 2: Medicina */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group anim-hover-lift anim-fade-up delay-2">
                 <div className="space-y-4">
                   <div className="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Pill size={28} />
@@ -542,7 +529,7 @@ export default function DonarPage() {
               </div>
 
               {/* Card 3: Productos de Higiene */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group anim-hover-lift anim-fade-up delay-3">
                 <div className="space-y-4">
                   <div className="w-14 h-14 rounded-2xl bg-teal-100 text-teal-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Bath size={28} />
@@ -584,7 +571,7 @@ export default function DonarPage() {
               </div>
 
               {/* Card 4: Equipamiento */}
-              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group">
+              <div className="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-sm hover:shadow-xl transition-all space-y-4 flex flex-col justify-between group anim-hover-lift anim-fade-up delay-4">
                 <div className="space-y-4">
                   <div className="w-14 h-14 rounded-2xl bg-indigo-100 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Package size={28} />
@@ -636,19 +623,17 @@ export default function DonarPage() {
                   <span>Logística y Puntos de Acopio</span>
                 </div>
                 <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
-                  ¿Dónde y cómo entregar tus donaciones en especie?
+                  {leer("donar_entrega_titulo")}
                 </h3>
-                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-                  Puedes acercarte a nuestra sede central, a nuestros centros de
-                  acopio autorizados o coordinar una recolección directa si se
-                  trata de un lote grande de alimentos o equipamiento.
+                <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed whitespace-pre-line">
+                  {leer("donar_entrega_descripcion")}
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={() => abrirModalDonacion(50)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-2xl shadow-md transition whitespace-nowrap self-start md:self-auto"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs rounded-2xl shadow-md transition whitespace-nowrap self-start md:self-auto anim-press"
               >
                 <CreditCard size={16} />
                 <span>Prefiero Donar Dinero</span>
@@ -656,7 +641,7 @@ export default function DonarPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2 anim-hover-lift anim-fade-up delay-4">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                   <MapPin size={18} className="text-rose-500" />
                   <h4>Sede Central del Refugio</h4>
@@ -671,7 +656,7 @@ export default function DonarPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2 anim-hover-lift anim-fade-up delay-5">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                   <Phone size={18} className="text-emerald-600" />
                   <h4>Coordinación de Recolección</h4>
@@ -686,7 +671,7 @@ export default function DonarPage() {
                 </div>
               </div>
 
-              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2">
+              <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm space-y-2 anim-hover-lift anim-fade-up delay-6">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                   <Mail size={18} className="text-indigo-600" />
                   <h4>Alianzas y Empresas</h4>
@@ -709,14 +694,14 @@ export default function DonarPage() {
       {/* MODAL DE DONACIÓN FINANCIERA CON TARJETA */}
       {/* ========================================================================= */}
       {modalAbierto && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200 anim-fade-in">
+          <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden my-8 anim-scale-in delay-1">
             {/* Cabecera del Modal */}
             <div className="bg-gradient-to-r from-rose-600 to-rose-700 text-white p-6 relative">
               <button
                 type="button"
                 onClick={cerrarModal}
-                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white/80 hover:text-white hover:bg-white/20 flex items-center justify-center transition"
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 text-white/80 hover:text-white hover:bg-white/20 flex items-center justify-center transition anim-press"
               >
                 <X size={18} />
               </button>
@@ -815,7 +800,7 @@ export default function DonarPage() {
                   <button
                     type="button"
                     onClick={cerrarModal}
-                    className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition"
+                    className="px-8 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md transition anim-press"
                   >
                     Cerrar Comprobante
                   </button>
@@ -828,7 +813,7 @@ export default function DonarPage() {
                     <button
                       type="button"
                       onClick={() => setFrecuencia("Única")}
-                      className={`flex-1 py-2 rounded-xl transition ${
+                      className={`flex-1 py-2 rounded-xl transition anim-press ${
                         frecuencia === "Única"
                           ? "bg-white text-rose-600 shadow-sm"
                           : "text-slate-600 hover:text-slate-900"
@@ -839,7 +824,7 @@ export default function DonarPage() {
                     <button
                       type="button"
                       onClick={() => setFrecuencia("Mensual")}
-                      className={`flex-1 py-2 rounded-xl transition ${
+                      className={`flex-1 py-2 rounded-xl transition anim-press ${
                         frecuencia === "Mensual"
                           ? "bg-white text-rose-600 shadow-sm"
                           : "text-slate-600 hover:text-slate-900"
@@ -863,7 +848,7 @@ export default function DonarPage() {
                             setMontoSeleccionado(m);
                             setMontoPersonalizado("");
                           }}
-                          className={`py-2.5 rounded-xl text-xs font-black transition ${
+                          className={`py-2.5 rounded-xl text-xs font-black transition anim-press ${
                             montoSeleccionado === m && !montoPersonalizado
                               ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
                               : "bg-slate-100 text-slate-700 hover:bg-slate-200"
@@ -916,8 +901,13 @@ export default function DonarPage() {
                       <input
                         type="text"
                         required
+                        maxLength={60}
                         value={nombreTitular}
-                        onChange={(e) => setNombreTitular(e.target.value)}
+                        onChange={(e) =>
+                          setNombreTitular(
+                            Validaciones.formatearSoloLetras(e.target.value, 60),
+                          )
+                        }
                         placeholder="Tal como figura en el plástico"
                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-800 uppercase focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
                       />
@@ -938,7 +928,8 @@ export default function DonarPage() {
                           required
                           value={numeroTarjeta}
                           onChange={handleNumeroTarjetaChange}
-                          placeholder="0000 0000 0000 0000"
+                          maxLength={19}
+                          placeholder="0000-0000-0000-0000"
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-mono text-slate-800 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
                         />
                       </div>
@@ -971,7 +962,7 @@ export default function DonarPage() {
                           value={codigoSeguridad}
                           onChange={handleCodigoSeguridadChange}
                           placeholder="123"
-                          maxLength={4}
+                          maxLength={3}
                           className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-mono text-slate-800 text-center focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500"
                         />
                       </div>
@@ -1030,14 +1021,14 @@ export default function DonarPage() {
                     <button
                       type="button"
                       onClick={cerrarModal}
-                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition"
+                      className="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 transition anim-press"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={enviando}
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-md transition disabled:opacity-50"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-black text-xs shadow-md transition disabled:opacity-50 anim-press"
                     >
                       {enviando ? (
                         <>

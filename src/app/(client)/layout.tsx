@@ -13,7 +13,7 @@ export default function ClientesLayout({
       <InvertedNavbar />
 
       {/* Sin max-w-7xl ni paddings laterales para que cada sección ocupe el 100% */}
-      <main className="flex-1 w-full">{children}</main>
+      <main className="anim-fade-in flex-1 w-full">{children}</main>
 
       <Footer />
     </div>

@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/src/context/ThemeContext";
+import { useToast } from "@/src/context/ToastContext";
 import { Button } from "@/src/components/ui/Button";
 import { obtenerSolicitantes } from "@/src/services/applicants/applicants-client";
 import { obtenerAnimales } from "@/src/services/animals/animal-client";
@@ -13,10 +14,7 @@ import {
   obtenerSolicitud,
 } from "@/src/services/solicitudes/solicitud-client";
 import { formatearEstadoSolicitud } from "@/src/services/solicitudes/solicitud-format";
-import {
-  ESTADOS_SOLICITUD,
-  type SolicitudInput,
-} from "@/src/types/solicitud";
+import { ESTADOS_SOLICITUD, type SolicitudInput } from "@/src/types/solicitud";
 import type { SolicitanteConConteo } from "@/src/types/solicitantes";
 import type { AnimalConRelaciones } from "@/src/types/animal";
 import {
@@ -31,10 +29,14 @@ import {
   Dog,
   Loader2,
   AlertTriangle,
+  ChevronRight,
+  ChevronLeft,
+  Check,
 } from "lucide-react";
 
 function FormularioSolicitud() {
   const { palette } = useTheme();
+  const { mostrarToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const idSolicitud = searchParams.get("id");
@@ -114,6 +116,53 @@ function FormularioSolicitud() {
   );
   const animalSeleccionado = animales.find((a) => a.id_animal === idAnimal);
 
+  const PASOS = [
+    {
+      id: "solicitante",
+      titulo: "Solicitante",
+      descripcion: "Selecciona a la persona que solicita la adopción",
+      icono: User,
+    },
+    {
+      id: "animal",
+      titulo: "Animal",
+      descripcion: "Selecciona el animal que se desea adoptar",
+      icono: PawPrint,
+    },
+    {
+      id: "evaluacion",
+      titulo: "Evaluación",
+      descripcion: "Estado de la solicitud y notas de evaluación",
+      icono: ClipboardList,
+    },
+  ] as const;
+
+  const [paso, setPaso] = useState(0);
+
+  const validarPasoActual = (): boolean => {
+    setError(null);
+
+    if (paso === 0) {
+      if (!idSolicitante) {
+        const mensaje = "Debes seleccionar un solicitante antes de continuar.";
+        setError(mensaje);
+        mostrarToast(mensaje, "error");
+        return false;
+      }
+    }
+
+    if (paso === 1) {
+      if (!idAnimal) {
+        const mensaje = "Debes seleccionar un animal antes de continuar.";
+        setError(mensaje);
+        mostrarToast(mensaje, "error");
+        return false;
+      }
+    }
+
+    return true;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGuardando(true);
@@ -132,14 +181,50 @@ function FormularioSolicitud() {
       } else {
         await crearSolicitud(payload);
       }
+      mostrarToast(
+        modoEdicion
+          ? "Solicitud actualizada correctamente."
+          : "Solicitud registrada correctamente.",
+        "success",
+      );
       router.push("/admin/modules/Adoption/Applications");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar el registro.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar el registro.";
+      setError(mensaje);
+      mostrarToast(mensaje, "error");
     } finally {
       setGuardando(false);
     }
+  };
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    if (paso < PASOS.length - 1) {
+      e.preventDefault();
+      if (validarPasoActual()) {
+        setPaso((prev) => prev + 1);
+      }
+      return;
+    }
+
+    if (!validarPasoActual()) {
+      e.preventDefault();
+      return;
+    }
+
+    handleSubmit(e);
+  };
+
+  const irAPaso = (indice: number) => {
+    if (indice <= paso || modoEdicion) {
+      setError(null);
+      setPaso(indice);
+    }
+  };
+
+  const retrocederPaso = () => {
+    setError(null);
+    setPaso((prev) => Math.max(0, prev - 1));
   };
 
   const inputClass =
@@ -148,23 +233,22 @@ function FormularioSolicitud() {
 
   return (
     <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
-      {/* Marco Contenedor Fijo (Sin Scroll de Pantalla) */}
       <form
-        onSubmit={handleSubmit}
-        className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden"
+        onSubmit={handleFormSubmit}
+        className="anim-fade-in h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden"
       >
         {/* Cabecera */}
-        <div className="flex items-center justify-between shrink-0 border-b border-slate-100 pb-4">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between gap-4 shrink-0 border-b border-slate-100 pb-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/admin/modules/Adoption/Applications"
-              className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition"
+              className="anim-press p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0"
               title="Volver al listado"
             >
               <ArrowLeft size={16} />
             </Link>
-            <div>
-              <h1 className="text-xl font-black text-slate-800">
+            <div className="min-w-0">
+              <h1 className="text-xl font-black text-slate-800 truncate">
                 {modoEdicion ? (
                   <>
                     Edición de{" "}
@@ -179,29 +263,96 @@ function FormularioSolicitud() {
                   </>
                 )}
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-500 truncate">
                 {modoEdicion
                   ? "Actualiza el solicitante, el animal y la evaluación de la solicitud."
-                  : "Selecciona el solicitante y el animal para registrar la solicitud de adopción."}
+                  : "Completa los pasos para registrar la solicitud de adopción."}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              type="submit"
-              disabled={guardando || cargando}
-              icon={
-                guardando ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Save size={16} />
-                )
-              }
-            >
-              {modoEdicion ? "Guardar Cambios" : "Guardar Registro"}
-            </Button>
-          </div>
+          <span
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
+            style={{
+              color: palette.primary,
+              backgroundColor: `${palette.primary}10`,
+              border: `1px solid ${palette.primary}30`,
+            }}
+          >
+            Paso {paso + 1} de {PASOS.length}
+          </span>
+        </div>
+
+        {/* Stepper horizontal con numeración y línea conectora */}
+        <div className="anim-fade-up delay-1 shrink-0 pt-5">
+          <ol className="flex items-center gap-2 sm:gap-3">
+            {PASOS.map((p, indice) => {
+              const activo = indice === paso;
+              const completado = indice < paso;
+              const habilitado = indice <= paso || modoEdicion;
+              const Icono = p.icono;
+
+              return (
+                <li
+                  key={p.id}
+                  className="flex items-center gap-2 sm:gap-3 flex-1 last:flex-none min-w-0"
+                >
+                  <button
+                    type="button"
+                    onClick={() => irAPaso(indice)}
+                    disabled={!habilitado}
+                    aria-current={activo ? "step" : undefined}
+                    className={`anim-press flex items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition text-left min-w-0 ${
+                      habilitado
+                        ? "cursor-pointer"
+                        : "cursor-not-allowed opacity-60"
+                    }`}
+                  >
+                    <span
+                      className="w-8 h-8 rounded-full flex items-center justify-center border text-xs font-black shrink-0 transition"
+                      style={{
+                        backgroundColor:
+                          completado || activo ? palette.primary : "#ffffff",
+                        borderColor:
+                          completado || activo ? palette.primary : "#e2e8f0",
+                        color: completado || activo ? "#ffffff" : "#94a3b8",
+                      }}
+                    >
+                      {completado ? <Check size={15} /> : <Icono size={15} />}
+                    </span>
+                    <span className="hidden sm:block min-w-0">
+                      <span
+                        className="block text-[10px] font-bold uppercase tracking-wider"
+                        style={{
+                          color: activo ? palette.primary : "#94a3b8",
+                        }}
+                      >
+                        Paso {indice + 1}
+                      </span>
+                      <span
+                        className={`block text-xs font-bold truncate ${
+                          activo ? "text-slate-800" : "text-slate-500"
+                        }`}
+                      >
+                        {p.titulo}
+                      </span>
+                    </span>
+                  </button>
+
+                  {indice < PASOS.length - 1 && (
+                    <span
+                      className="flex-1 h-0.5 rounded-full transition-colors"
+                      style={{
+                        backgroundColor: completado
+                          ? palette.primary
+                          : "#e2e8f0",
+                      }}
+                    />
+                  )}
+                </li>
+              );
+            })}
+          </ol>
         </div>
 
         {/* Mensaje de error */}
@@ -212,234 +363,347 @@ function FormularioSolicitud() {
           </div>
         )}
 
-        {/* CONTENEDOR FIJO DIVIDIDO EN 3 COLUMNAS (SIN SCROLL) */}
-        <div className="flex-1 min-h-0 my-4 overflow-hidden">
+        {/* Contenedor central con scroll interno */}
+        <div className="flex-1 min-h-0 my-4 overflow-y-auto pr-1">
           {cargando ? (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
               <Loader2 size={22} className="animate-spin" />
-              <span className="text-xs font-medium">
-                Cargando solicitud...
-              </span>
+              <span className="text-xs font-medium">Cargando solicitud...</span>
             </div>
           ) : (
-            <div className="h-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 overflow-hidden">
-              {/* COLUMNA 1: SOLICITANTE */}
-              <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-fit">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <User size={15} style={{ color: palette.secondary }} />
-                  <span>1. Solicitante</span>
-                </h2>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Solicitante *
-                  </label>
-                  <select
-                    required
-                    value={idSolicitante}
-                    onChange={(e) => setIdSolicitante(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="">Selecciona un solicitante...</option>
-                    {solicitantes.map((s) => (
-                      <option key={s.id_solicitante} value={s.id_solicitante}>
-                        {s.nombre} {s.apellido} — {s.documento_identidad}
-                      </option>
-                    ))}
-                  </select>
-                  {solicitantes.length === 0 && (
-                    <p className="text-[11px] text-amber-600 mt-1 font-medium">
-                      No hay solicitantes registrados.{" "}
-                      <Link
-                        href="/admin/modules/Adoption/Applicants/Form"
-                        className="underline font-bold"
-                        style={{ color: palette.primary }}
-                      >
-                        Registra uno primero
-                      </Link>
-                      .
-                    </p>
-                  )}
-                </div>
-
-                {solicitanteSeleccionado ? (
-                  <div className="space-y-2 p-3 bg-white rounded-xl border border-slate-200">
-                    <p className="font-bold text-slate-800">
-                      {solicitanteSeleccionado.nombre}{" "}
-                      {solicitanteSeleccionado.apellido}
-                    </p>
-                    <p className="text-[10px] font-mono text-slate-400">
-                      DOC: {solicitanteSeleccionado.documento_identidad}
-                    </p>
-                    <div className="space-y-1 text-slate-600">
-                      <span className="flex items-center gap-1.5 truncate">
-                        <Mail size={11} className="text-slate-400 shrink-0" />
-                        {solicitanteSeleccionado.email}
-                      </span>
-                      <span className="flex items-center gap-1.5">
-                        <Phone size={11} className="text-slate-400 shrink-0" />
-                        {solicitanteSeleccionado.telefono}
-                      </span>
-                      <span className="flex items-start gap-1.5">
-                        <MapPin size={11} className="text-slate-400 shrink-0 mt-0.5" />
-                        <span className="line-clamp-2">
-                          {solicitanteSeleccionado.direccion}
-                        </span>
-                      </span>
-                      <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
-                        <Dog size={11} className="text-slate-400 shrink-0" />
-                        {solicitanteSeleccionado.tiene_mascotas
-                          ? "Tiene mascotas"
-                          : "Sin mascotas"}
-                      </span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
-                    <p className="text-[11px]">
-                      Selecciona un solicitante para ver sus datos de contacto.
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* COLUMNA 2: ANIMAL SOLICITADO */}
-              <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-fit">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <PawPrint size={15} style={{ color: palette.secondary }} />
-                  <span>2. Animal Solicitado</span>
-                </h2>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Animal *
-                  </label>
-                  <select
-                    required
-                    value={idAnimal}
-                    onChange={(e) => setIdAnimal(e.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="">Selecciona un animal...</option>
-                    {animales.map((a) => (
-                      <option key={a.id_animal} value={a.id_animal}>
-                        {a.nombre} — {a.codigo_identificador}
-                      </option>
-                    ))}
-                  </select>
-                  {animales.length === 0 && (
-                    <p className="text-[11px] text-amber-600 mt-1 font-medium">
-                      No hay animales registrados.{" "}
-                      <Link
-                        href="/admin/modules/Animals/Income/Form"
-                        className="underline font-bold"
-                        style={{ color: palette.primary }}
-                      >
-                        Registra uno primero
-                      </Link>
-                      .
-                    </p>
-                  )}
-                </div>
-
-                {animalSeleccionado ? (
-                  <div className="space-y-2 p-3 bg-white rounded-xl border border-slate-200">
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="font-bold text-slate-800">
-                        {animalSeleccionado.nombre}
-                      </p>
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                        style={{
-                          color: palette.primary,
-                          backgroundColor: `${palette.primary}10`,
-                          border: `1px solid ${palette.primary}30`,
-                        }}
-                      >
-                        {animalSeleccionado.estado.replace(/_/g, " ")}
-                      </span>
-                    </div>
-                    <p className="text-[10px] font-mono text-slate-400">
-                      {animalSeleccionado.codigo_identificador}
-                    </p>
-                    <div className="space-y-1 text-[11px] text-slate-500">
-                      <p>
-                        <span className="font-semibold text-slate-600">
-                          Especie:
-                        </span>{" "}
-                        {animalSeleccionado.especie?.nombre_comun ?? "—"}
-                      </p>
-                      <p>
-                        <span className="font-semibold text-slate-600">
-                          Raza:
-                        </span>{" "}
-                        {animalSeleccionado.raza_variedad ?? "—"}
+            <div className="mx-auto w-full max-w-3xl space-y-5 py-1">
+              {/* PASO 1: SOLICITANTE */}
+              {paso === 0 && (
+                <section className="anim-fade-up delay-2 space-y-5">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                      style={{
+                        backgroundColor: `${palette.secondary}12`,
+                        color: palette.secondary,
+                      }}
+                    >
+                      <User size={18} />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-800">
+                        Solicitante
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Selecciona a la persona que desea adoptar y revisa sus
+                        datos de contacto.
                       </p>
                     </div>
                   </div>
-                ) : (
-                  <div className="p-4 text-center text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
-                    <p className="text-[11px]">
-                      Selecciona un animal para ver su ficha resumida.
-                    </p>
+
+                  <div className="anim-fade-up delay-3 space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Solicitante *
+                      </label>
+                      <select
+                        required
+                        value={idSolicitante}
+                        onChange={(e) => setIdSolicitante(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">Selecciona un solicitante...</option>
+                        {solicitantes.map((s) => (
+                          <option
+                            key={s.id_solicitante}
+                            value={s.id_solicitante}
+                          >
+                            {s.nombre} {s.apellido} — {s.documento_identidad}
+                          </option>
+                        ))}
+                      </select>
+                      {solicitantes.length === 0 && (
+                        <p className="text-[11px] text-amber-600 mt-1 font-medium">
+                          No hay solicitantes registrados.{" "}
+                          <Link
+                            href="/admin/modules/Adoption/Applicants/Form"
+                            className="underline font-bold"
+                            style={{ color: palette.primary }}
+                          >
+                            Registra uno primero
+                          </Link>
+                          .
+                        </p>
+                      )}
+                    </div>
+
+                    {solicitanteSeleccionado ? (
+                      <div className="anim-fade-up delay-4 space-y-2 p-4 bg-white rounded-xl border border-slate-200">
+                        <p className="font-bold text-slate-800">
+                          {solicitanteSeleccionado.nombre}{" "}
+                          {solicitanteSeleccionado.apellido}
+                        </p>
+                        <p className="text-[10px] font-mono text-slate-400">
+                          DOC: {solicitanteSeleccionado.documento_identidad}
+                        </p>
+                        <div className="space-y-1 text-slate-600">
+                          <span className="flex items-center gap-1.5 truncate">
+                            <Mail
+                              size={11}
+                              className="text-slate-400 shrink-0"
+                            />
+                            {solicitanteSeleccionado.email}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Phone
+                              size={11}
+                              className="text-slate-400 shrink-0"
+                            />
+                            {solicitanteSeleccionado.telefono}
+                          </span>
+                          <span className="flex items-start gap-1.5">
+                            <MapPin
+                              size={11}
+                              className="text-slate-400 shrink-0 mt-0.5"
+                            />
+                            <span className="line-clamp-2">
+                              {solicitanteSeleccionado.direccion}
+                            </span>
+                          </span>
+                          <span className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                            <Dog
+                              size={11}
+                              className="text-slate-400 shrink-0"
+                            />
+                            {solicitanteSeleccionado.tiene_mascotas
+                              ? "Tiene mascotas"
+                              : "Sin mascotas"}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="anim-fade-up delay-4 p-6 text-center text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
+                        <p className="text-[11px]">
+                          Selecciona un solicitante para ver sus datos de
+                          contacto.
+                        </p>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </section>
+              )}
 
-              {/* COLUMNA 3: EVALUACIÓN */}
-              <div className="space-y-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 h-fit">
-                <h2 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
-                  <ClipboardList size={15} style={{ color: palette.primary }} />
-                  <span>3. Evaluación</span>
-                </h2>
+              {/* PASO 2: ANIMAL */}
+              {paso === 1 && (
+                <section className="anim-fade-up delay-2 space-y-5">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                      style={{
+                        backgroundColor: `${palette.primary}12`,
+                        color: palette.primary,
+                      }}
+                    >
+                      <PawPrint size={18} />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-800">
+                        Animal solicitado
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Selecciona el animal que se desea adoptar y revisa su
+                        ficha resumida.
+                      </p>
+                    </div>
+                  </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Estado de la Solicitud *
-                  </label>
-                  <select
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value)}
-                    className={inputClass}
-                  >
-                    {ESTADOS_SOLICITUD.map((valor) => (
-                      <option key={valor} value={valor}>
-                        {formatearEstadoSolicitud(valor)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  <div className="anim-fade-up delay-3 space-y-4 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Animal *
+                      </label>
+                      <select
+                        required
+                        value={idAnimal}
+                        onChange={(e) => setIdAnimal(e.target.value)}
+                        className={inputClass}
+                      >
+                        <option value="">Selecciona un animal...</option>
+                        {animales.map((a) => (
+                          <option key={a.id_animal} value={a.id_animal}>
+                            {a.nombre} — {a.codigo_identificador}
+                          </option>
+                        ))}
+                      </select>
+                      {animales.length === 0 && (
+                        <p className="text-[11px] text-amber-600 mt-1 font-medium">
+                          No hay animales registrados.{" "}
+                          <Link
+                            href="/admin/modules/Animals/Income/Form"
+                            className="underline font-bold"
+                            style={{ color: palette.primary }}
+                          >
+                            Registra uno primero
+                          </Link>
+                          .
+                        </p>
+                      )}
+                    </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Notas de Evaluación
-                  </label>
-                  <textarea
-                    rows={5}
-                    placeholder="Observaciones, resultado de la entrevista, condiciones..."
-                    value={notasEvaluacion}
-                    onChange={(e) => setNotasEvaluacion(e.target.value)}
-                    className={`${inputClass} resize-none`}
-                  />
-                </div>
+                    {animalSeleccionado ? (
+                      <div className="anim-fade-up delay-4 space-y-2 p-4 bg-white rounded-xl border border-slate-200">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold text-slate-800">
+                            {animalSeleccionado.nombre}
+                          </p>
+                          <span
+                            className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                            style={{
+                              color: palette.primary,
+                              backgroundColor: `${palette.primary}10`,
+                              border: `1px solid ${palette.primary}30`,
+                            }}
+                          >
+                            {animalSeleccionado.estado.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <p className="text-[10px] font-mono text-slate-400">
+                          {animalSeleccionado.codigo_identificador}
+                        </p>
+                        <div className="space-y-1 text-[11px] text-slate-500">
+                          <p>
+                            <span className="font-semibold text-slate-600">
+                              Especie:
+                            </span>{" "}
+                            {animalSeleccionado.especie?.nombre_comun ?? "—"}
+                          </p>
+                          <p>
+                            <span className="font-semibold text-slate-600">
+                              Raza:
+                            </span>{" "}
+                            {animalSeleccionado.raza_variedad ?? "—"}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="anim-fade-up delay-4 p-6 text-center text-slate-400 bg-slate-100/50 rounded-xl border border-dashed border-slate-200">
+                        <p className="text-[11px]">
+                          Selecciona un animal para ver su ficha resumida.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )}
 
-                <div className="p-3 bg-white rounded-xl border border-slate-200">
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    La fecha de la solicitud se registra automáticamente. El
-                    estado puede actualizarse conforme avance la evaluación.
-                  </p>
-                </div>
-              </div>
+              {/* PASO 3: EVALUACIÓN */}
+              {paso === 2 && (
+                <section className="anim-fade-up delay-2 space-y-5">
+                  <div className="flex items-start gap-3">
+                    <span
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+                      style={{
+                        backgroundColor: `${palette.dark}12`,
+                        color: palette.dark,
+                      }}
+                    >
+                      <ClipboardList size={18} />
+                    </span>
+                    <div>
+                      <h2 className="text-lg font-black text-slate-800">
+                        Evaluación de la solicitud
+                      </h2>
+                      <p className="text-xs text-slate-500">
+                        Define el estado actual y registra las notas de
+                        evaluación.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="anim-fade-up delay-3 grid gap-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Estado de la Solicitud *
+                      </label>
+                      <select
+                        value={estado}
+                        onChange={(e) => setEstado(e.target.value)}
+                        className={inputClass}
+                      >
+                        {ESTADOS_SOLICITUD.map((valor) => (
+                          <option key={valor} value={valor}>
+                            {formatearEstadoSolicitud(valor)}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">
+                        Notas de Evaluación
+                      </label>
+                      <textarea
+                        rows={5}
+                        placeholder="Observaciones, resultado de la entrevista, condiciones..."
+                        value={notasEvaluacion}
+                        onChange={(e) => setNotasEvaluacion(e.target.value)}
+                        className={`${inputClass} resize-none`}
+                      />
+                    </div>
+
+                    <div className="anim-fade-up delay-4 p-3 bg-white rounded-xl border border-slate-200">
+                      <p className="text-[11px] text-slate-400 leading-relaxed">
+                        La fecha de la solicitud se registra automáticamente. El
+                        estado puede actualizarse conforme avance la evaluación.
+                      </p>
+                    </div>
+                  </div>
+                </section>
+              )}
             </div>
           )}
         </div>
 
-        {/* Footer del Formulario */}
-        <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <span>Campos marcados con (*) son obligatorios</span>
-          <span className="font-semibold text-slate-600">
-            Sistema AnimalSmile
+        {/* Footer de Navegación */}
+        <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3 shrink-0">
+          <span className="text-[11px] text-slate-400 hidden sm:block">
+            {paso === 0
+              ? "Los campos marcados con (*) son obligatorios."
+              : `Paso ${paso + 1} de ${PASOS.length} · ${PASOS[paso].descripcion}`}
           </span>
+
+          <div className="flex items-center gap-2 ml-auto">
+            {paso > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={retrocederPaso}
+                disabled={guardando}
+                icon={<ChevronLeft size={15} />}
+              >
+                Anterior
+              </Button>
+            )}
+
+            {paso < PASOS.length - 1 ? (
+              <Button
+                type="submit"
+                disabled={cargando}
+                icon={<ChevronRight size={15} />}
+              >
+                Siguiente
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                disabled={guardando || cargando}
+                icon={
+                  guardando ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Save size={16} />
+                  )
+                }
+              >
+                {modoEdicion ? "Guardar Cambios" : "Guardar Registro"}
+              </Button>
+            )}
+          </div>
         </div>
       </form>
     </div>

@@ -11,12 +11,12 @@ export function TabsSwitcher({ activeTab, onChange }: TabsProps) {
   const { palette } = useTheme();
 
   return (
-    <div className="inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+    <div className="anim-fade-in inline-flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
       <button
         onClick={() => onChange("especies")}
-        className={`px-4 py-1.5 rounded-lg font-bold transition ${
+        className={`anim-press px-4 py-1.5 rounded-lg font-bold transition ${
           activeTab === "especies"
-            ? "text-white shadow-xs"
+            ? "anim-scale-in text-white shadow-xs"
             : "text-slate-600 hover:text-slate-900"
         }`}
         style={
@@ -29,9 +29,9 @@ export function TabsSwitcher({ activeTab, onChange }: TabsProps) {
       </button>
       <button
         onClick={() => onChange("taxonomias")}
-        className={`px-4 py-1.5 rounded-lg font-bold transition ${
+        className={`anim-press px-4 py-1.5 rounded-lg font-bold transition ${
           activeTab === "taxonomias"
-            ? "text-white shadow-xs"
+            ? "anim-scale-in text-white shadow-xs"
             : "text-slate-600 hover:text-slate-900"
         }`}
         style={

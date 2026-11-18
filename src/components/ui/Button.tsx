@@ -21,7 +21,7 @@ export function Button({
     return (
       <button
         {...props}
-        className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition shadow-xs hover:opacity-80 active:scale-95 ${className}`}
+        className={`anim-press flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold border transition shadow-xs hover:-translate-y-0.5 hover:opacity-90 ${className}`}
         style={{ borderColor: palette.primary, color: palette.primary }}
       >
         {icon}
@@ -33,7 +33,7 @@ export function Button({
   return (
     <button
       {...props}
-      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:opacity-90 active:scale-95 ${className}`}
+      className={`anim-press flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-sm transition hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg ${className}`}
       style={{ backgroundColor: palette.primary }}
     >
       {icon}

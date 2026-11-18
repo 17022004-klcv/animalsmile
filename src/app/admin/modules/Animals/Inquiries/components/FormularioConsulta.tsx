@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/Button";
+import { useToast } from "@/src/context/ToastContext";
 import {
   registrarConsulta,
   actualizarConsulta,
@@ -68,6 +69,7 @@ export default function FormularioConsulta({
   onGuardado,
   onCancelar,
 }: FormularioConsultaProps) {
+  const { mostrarToast } = useToast();
   const esEdicion = Boolean(consulta);
 
   const [tipoConsulta, setTipoConsulta] = useState<string>("Consulta_General");
@@ -214,7 +216,9 @@ export default function FormularioConsulta({
 
   const handleGuardar = async () => {
     if (!motivo.trim()) {
-      setError("El motivo de la consulta es obligatorio.");
+      const mensaje = "El motivo de la consulta es obligatorio.";
+      setError(mensaje);
+      mostrarToast(mensaje, "error");
       return;
     }
     setGuardando(true);
@@ -225,11 +229,18 @@ export default function FormularioConsulta({
       } else {
         await registrarConsulta(idAnimal, payload);
       }
+      mostrarToast(
+        esEdicion
+          ? "Consulta actualizada correctamente."
+          : "Consulta registrada correctamente.",
+        "success",
+      );
       onGuardado();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar la consulta.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar la consulta.";
+      setError(mensaje);
+      mostrarToast(mensaje, "error");
     } finally {
       setGuardando(false);
     }
@@ -239,15 +250,15 @@ export default function FormularioConsulta({
     "w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[var(--color-primary)] transition";
 
   return (
-    <div className="space-y-4">
+    <div className="anim-fade-in space-y-4">
       {error && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
+        <div className="anim-fade-up flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
           {error}
         </div>
       )}
 
       {/* Datos de la consulta */}
-      <div className="space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+      <div className="anim-fade-up delay-1 space-y-3 p-4 bg-slate-50 rounded-2xl border border-slate-100">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
           <Stethoscope size={12} /> Datos de la consulta
         </span>
@@ -390,7 +401,7 @@ export default function FormularioConsulta({
       </div>
 
       {/* Vacunas */}
-      <div className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+      <div className="anim-fade-up delay-2 space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
           <Syringe size={12} /> Vacunas aplicadas ({Object.keys(vacunas).length})
         </span>
@@ -473,7 +484,7 @@ export default function FormularioConsulta({
       </div>
 
       {/* Medicamentos */}
-      <div className="space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+      <div className="anim-fade-up delay-3 space-y-2 p-4 bg-slate-50 rounded-2xl border border-slate-100">
         <div className="flex items-center justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
             <Pill size={12} /> Medicamentos administrados (
@@ -543,7 +554,7 @@ export default function FormularioConsulta({
                   </select>
                   <button
                     onClick={() => quitarFilaMedicamento(indice)}
-                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                    className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                     title="Quitar medicamento"
                   >
                     <Trash2 size={13} />
@@ -555,7 +566,7 @@ export default function FormularioConsulta({
         )}
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="anim-fade-up delay-4 flex justify-end gap-2">
         {onCancelar && (
           <Button variant="outline" onClick={onCancelar}>
             Cancelar

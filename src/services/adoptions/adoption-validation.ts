@@ -2,8 +2,22 @@ import type { ResultadoParseo } from "@/src/types/common";
 import type { EstadoSolicitud } from "@/src/types/enums";
 import { ESTADOS_SOLICITUD } from "@/src/types/enums";
 import type { SolicitanteInput } from "@/src/types/solicitantes";
+import type {
+  AdopcionInput,
+  AdopcionParcial,
+  SeguimientoInput,
+  SeguimientoProgramacionParcial,
+  SeguimientoResultadoInput,
+} from "@/src/types/adopcion";
 
 export type { SolicitanteInput } from "@/src/types/solicitantes";
+export type {
+  AdopcionInput,
+  AdopcionParcial,
+  SeguimientoInput,
+  SeguimientoProgramacionParcial,
+  SeguimientoResultadoInput,
+} from "@/src/types/adopcion";
 
 export type SolicitudInput = {
   id_solicitante: string;
@@ -17,29 +31,24 @@ export type EvaluacionSolicitudInput = {
   notas_evaluacion: string | null;
 };
 
-export type AdopcionInput = {
-  id_solicitud: string;
-  fecha_adopcion: string;
-  contrato_firmado_url: string | null;
-};
-
-export type SeguimientoInput = {
-  id_adopcion: string;
-  num_mes: number;
-  fecha_programada: string;
-};
-
-export type SeguimientoResultadoInput = {
-  fecha_realizada: string;
-  estado_evaluacion: string | null;
-  observaciones: string | null;
-  evidencias_fotos: string[] | null;
-};
-
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function textoOpcional(valor: unknown): string | null {
   return typeof valor === "string" && valor.trim() ? valor.trim() : null;
+}
+
+function fechaISO(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const texto = valor.trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(texto)) return null;
+  const fecha = new Date(`${texto}T00:00:00Z`);
+  if (
+    Number.isNaN(fecha.getTime()) ||
+    fecha.toISOString().slice(0, 10) !== texto
+  ) {
+    return null;
+  }
+  return texto;
 }
 
 /** Valida y normaliza el registro de un solicitante. */
@@ -168,22 +177,59 @@ export function parseAdopcionInput(raw: unknown): ResultadoParseo<AdopcionInput>
     return { ok: false, error: "Debes indicar la solicitud aprobada." };
   }
 
-  const fecha =
-    typeof b.fecha_adopcion === "string" && b.fecha_adopcion.trim()
-      ? b.fecha_adopcion.trim()
-      : null;
+  let fecha = new Date().toISOString().slice(0, 10);
+  if (
+    b.fecha_adopcion !== undefined &&
+    b.fecha_adopcion !== null &&
+    b.fecha_adopcion !== ""
+  ) {
+    const fechaNormalizada = fechaISO(b.fecha_adopcion);
+    if (!fechaNormalizada) {
+      return { ok: false, error: "La fecha de adopción no es válida." };
+    }
+    fecha = fechaNormalizada;
+  }
 
   return {
     ok: true,
     valor: {
       id_solicitud: idSolicitud,
-      fecha_adopcion: fecha ?? new Date().toISOString().slice(0, 10),
+      fecha_adopcion: fecha,
       contrato_firmado_url: textoOpcional(b.contrato_firmado_url),
     },
   };
 }
 
-/** Valida y normaliza la programación de un seguimiento. */
+export function parseAdopcionParcial(
+  raw: unknown,
+): ResultadoParseo<AdopcionParcial> {
+  const b = (raw ?? {}) as Record<string, unknown>;
+  const valor: AdopcionParcial = {};
+
+  if ("fecha_adopcion" in b) {
+    const fecha = fechaISO(b.fecha_adopcion);
+    if (!fecha) {
+      return { ok: false, error: "La fecha de adopción no es válida." };
+    }
+    valor.fecha_adopcion = fecha;
+  }
+
+  if ("contrato_firmado_url" in b) {
+    valor.contrato_firmado_url = textoOpcional(b.contrato_firmado_url);
+  }
+
+  if (Object.keys(valor).length === 0) {
+    return { ok: false, error: "No se indicaron cambios para la adopción." };
+  }
+
+  return { ok: true, valor };
+}
+
+function numeroMes(valor: unknown): number | null {
+  const numero = Number(valor);
+  return Number.isInteger(numero) && numero > 0 ? numero : null;
+}
+
 export function parseSeguimientoInput(
   raw: unknown,
 ): ResultadoParseo<SeguimientoInput> {
@@ -195,15 +241,14 @@ export function parseSeguimientoInput(
     return { ok: false, error: "Debes indicar la adopción." };
   }
 
-  const numMes = Number(b.num_mes);
-  if (!Number.isInteger(numMes) || numMes < 1) {
+  const numMes = numeroMes(b.num_mes);
+  if (numMes === null) {
     return { ok: false, error: "El número de mes debe ser un entero positivo." };
   }
 
-  const fecha =
-    typeof b.fecha_programada === "string" ? b.fecha_programada.trim() : "";
+  const fecha = fechaISO(b.fecha_programada);
   if (!fecha) {
-    return { ok: false, error: "La fecha programada es obligatoria." };
+    return { ok: false, error: "La fecha programada no es válida." };
   }
 
   return {
@@ -212,16 +257,58 @@ export function parseSeguimientoInput(
   };
 }
 
-/** Valida el resultado de un seguimiento realizado. */
+export function parseProgramacionSeguimiento(
+  raw: unknown,
+): ResultadoParseo<SeguimientoProgramacionParcial> {
+  const b = (raw ?? {}) as Record<string, unknown>;
+  const valor: SeguimientoProgramacionParcial = {};
+
+  if ("num_mes" in b) {
+    const numMes = numeroMes(b.num_mes);
+    if (numMes === null) {
+      return {
+        ok: false,
+        error: "El número de mes debe ser un entero positivo.",
+      };
+    }
+    valor.num_mes = numMes;
+  }
+
+  if ("fecha_programada" in b) {
+    const fecha = fechaISO(b.fecha_programada);
+    if (!fecha) {
+      return { ok: false, error: "La fecha programada no es válida." };
+    }
+    valor.fecha_programada = fecha;
+  }
+
+  if (Object.keys(valor).length === 0) {
+    return {
+      ok: false,
+      error: "No se indicaron cambios para la programación.",
+    };
+  }
+
+  return { ok: true, valor };
+}
+
 export function parseSeguimientoResultado(
   raw: unknown,
 ): ResultadoParseo<SeguimientoResultadoInput> {
   const b = (raw ?? {}) as Record<string, unknown>;
 
-  const fecha =
-    typeof b.fecha_realizada === "string" && b.fecha_realizada.trim()
-      ? b.fecha_realizada.trim()
-      : new Date().toISOString().slice(0, 10);
+  let fecha = new Date().toISOString().slice(0, 10);
+  if (
+    b.fecha_realizada !== undefined &&
+    b.fecha_realizada !== null &&
+    b.fecha_realizada !== ""
+  ) {
+    const fechaNormalizada = fechaISO(b.fecha_realizada);
+    if (!fechaNormalizada) {
+      return { ok: false, error: "La fecha de realización no es válida." };
+    }
+    fecha = fechaNormalizada;
+  }
 
   const fotos = Array.isArray(b.evidencias_fotos)
     ? b.evidencias_fotos.filter((f): f is string => typeof f === "string")

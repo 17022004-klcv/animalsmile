@@ -3,12 +3,14 @@
 import React, { useEffect, useState } from "react";
 import "./panda-login.css";
 import { Rabbit, Bird } from "lucide-react";
+import { Validaciones } from "@/src/utils/validaciones";
 
 export default function PandaLogin() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isPasswordFocused, setIsPasswordFocused] = useState(false);
   const [isWrong, setIsWrong] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("¡Credenciales incorrectas!");
   const [eyePos, setEyePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
@@ -39,6 +41,14 @@ export default function PandaLogin() {
     e.preventDefault();
     setIsWrong(false);
 
+    const errEmail = Validaciones.validarEmail(username, true);
+    if (errEmail) {
+      setErrorMsg(errEmail);
+      setIsWrong(true);
+      window.setTimeout(() => setIsWrong(false), 3000);
+      return;
+    }
+
     const email = username.trim().toLowerCase();
 
     try {
@@ -54,6 +64,7 @@ export default function PandaLogin() {
       };
 
       if (!res.ok) {
+        setErrorMsg("¡Credenciales incorrectas!");
         setIsWrong(true);
         window.setTimeout(() => setIsWrong(false), 3000);
         return;
@@ -62,6 +73,7 @@ export default function PandaLogin() {
       const destino = data.redirect ?? ("/");
       window.location.href = destino;
     } catch {
+      setErrorMsg("¡Credenciales incorrectas!");
       setIsWrong(true);
       window.setTimeout(() => setIsWrong(false), 3000);
     }
@@ -163,7 +175,7 @@ export default function PandaLogin() {
 
           {isWrong && (
             <div className="login-alert" role="alert">
-              ¡Credenciales incorrectas!
+              {errorMsg}
             </div>
           )}
 

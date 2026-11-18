@@ -29,7 +29,7 @@ export default function Footer() {
   }, []);
 
   return (
-    <footer className="relative w-full bg-[#1e2749] text-slate-300">
+    <footer className="anim-fade-in relative w-full bg-[#1e2749] text-slate-300">
       <div
         className="h-1.5 w-full"
         style={{
@@ -39,7 +39,7 @@ export default function Footer() {
 
       <div className="max-w-7xl mx-auto px-6 py-14 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
         {/* Identidad */}
-        <div className="space-y-4 lg:col-span-1">
+        <div className="anim-fade-up space-y-4 lg:col-span-1">
           <Link href="/" className="flex items-center gap-2.5 group">
             {logoSitio ? (
               <img
@@ -64,7 +64,7 @@ export default function Footer() {
         </div>
 
         {/* Enlaces rápidos */}
-        <div className="space-y-4">
+        <div className="anim-fade-up delay-1 space-y-4">
           <h3 className="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2">
             <PawPrint size={16} style={{ color: sitePalette.primary }} />
             <span>Secciones</span>
@@ -88,7 +88,7 @@ export default function Footer() {
         </div>
 
         {/* Contacto */}
-        <div className="space-y-4">
+        <div className="anim-fade-up delay-2 space-y-4">
           <h3 className="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2">
             <Phone size={16} style={{ color: sitePalette.primary }} />
             <span>Contacto</span>
@@ -141,7 +141,7 @@ export default function Footer() {
         </div>
 
         {/* Horario y donación */}
-        <div className="space-y-4">
+        <div className="anim-fade-up delay-3 space-y-4">
           <h3 className="text-white font-bold text-sm uppercase tracking-wider flex items-center gap-2">
             <Clock size={16} style={{ color: sitePalette.primary }} />
             <span>Horario de atención</span>
@@ -163,7 +163,7 @@ export default function Footer() {
 
           <Link
             href="/donar"
-            className="inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-2xl font-black text-sm text-white shadow-lg transition-all hover:-translate-y-0.5"
+            className="anim-press inline-flex items-center justify-center gap-2 w-full px-5 py-3 rounded-2xl font-black text-sm text-white shadow-lg transition-all hover:-translate-y-0.5"
             style={{
               background: `linear-gradient(135deg, ${sitePalette.primary} 0%, ${sitePalette.accent} 100%)`,
             }}

@@ -15,6 +15,7 @@ import {
 import {
   CONFIGURACION_SITIO_DEFECTO,
   SECCIONES_SITIO,
+  clavePortadaSeccion,
   mapaConfiguracionSitio,
   parsearGaleriaSitio,
   serializarGaleriaSitio,
@@ -87,7 +88,9 @@ export default function ConfiguracionSitioPage() {
   const camposPorClave = useMemo(() => {
     const mapa: Record<string, CampoSitio> = {};
     for (const seccion of SECCIONES_SITIO) {
-      for (const campo of seccion.fields) mapa[campo.key] = campo;
+      for (const sub of seccion.subsections) {
+        for (const campo of sub.fields) mapa[campo.key] = campo;
+      }
     }
     return mapa;
   }, []);
@@ -206,8 +209,10 @@ export default function ConfiguracionSitioPage() {
 
   const restablecerSeccion = () => {
     const siguiente = { ...valores };
-    for (const campo of seccion.fields) {
-      siguiente[campo.key] = CONFIGURACION_SITIO_DEFECTO[campo.key] ?? "";
+    for (const sub of seccion.subsections) {
+      for (const campo of sub.fields) {
+        siguiente[campo.key] = CONFIGURACION_SITIO_DEFECTO[campo.key] ?? "";
+      }
     }
     setValores(siguiente);
     if (seccion.id === "general") {
@@ -224,20 +229,22 @@ export default function ConfiguracionSitioPage() {
 
     const configuraciones: ConfiguracionSitioInput[] = SECCIONES_SITIO.flatMap(
       (item) =>
-        item.fields.map((campo) => ({
-          clave: campo.key,
-          valor: valores[campo.key] ?? "",
-          tipo_dato:
-            campo.type === "gallery"
-              ? "galeria"
-              : campo.type === "image"
-                ? "url"
-                : campo.type === "color"
-                  ? "color"
-                  : "string",
-          seccion: item.id,
-          descripcion: campo.label,
-        })),
+        item.subsections.flatMap((sub) =>
+          sub.fields.map((campo) => ({
+            clave: campo.key,
+            valor: valores[campo.key] ?? "",
+            tipo_dato:
+              campo.type === "gallery"
+                ? "galeria"
+                : campo.type === "image"
+                  ? "url"
+                  : campo.type === "color"
+                    ? "color"
+                    : "string",
+            seccion: item.id,
+            descripcion: `${sub.label} · ${campo.label}`,
+          })),
+        ),
     );
 
     try {
@@ -259,12 +266,13 @@ export default function ConfiguracionSitioPage() {
     }
   };
 
-  const imagenesPreview = parsearGaleriaSitio(
-    valores[`${seccion.id}_imagenes`] ?? "",
-  );
+  const clavePortada = clavePortadaSeccion(seccion.id);
+  const imagenesPreview = clavePortada
+    ? parsearGaleriaSitio(valores[clavePortada] ?? "")
+    : [];
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col">
       <input
         ref={inputArchivoRef}
         type="file"
@@ -273,7 +281,7 @@ export default function ConfiguracionSitioPage() {
         onChange={manejarArchivos}
       />
 
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col overflow-hidden">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shrink-0">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
@@ -312,7 +320,7 @@ export default function ConfiguracionSitioPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto py-4 shrink-0">
+        <div className="anim-fade-up delay-2 flex items-center gap-2 overflow-x-auto py-4 shrink-0">
           {SECCIONES_SITIO.map((item) => {
             const Icono = ICONOS[item.id] ?? FileText;
             const activa = item.id === seccionActiva;
@@ -325,7 +333,7 @@ export default function ConfiguracionSitioPage() {
                   setMensaje(null);
                   setError(null);
                 }}
-                className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition whitespace-nowrap ${
+                className={`anim-press flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold border transition whitespace-nowrap ${
                   activa
                     ? "text-white shadow-xs"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -360,7 +368,7 @@ export default function ConfiguracionSitioPage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="anim-fade-up delay-3 flex-1 min-h-0 overflow-y-auto pr-1">
           {cargando ? (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
               <Loader2 size={22} className="animate-spin" />
@@ -371,7 +379,7 @@ export default function ConfiguracionSitioPage() {
           ) : (
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-5">
               <div className="xl:col-span-7 space-y-4">
-                <div className="flex items-start justify-between gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
+                <div className="anim-fade-up delay-4 flex items-start justify-between gap-3 bg-slate-50 border border-slate-100 rounded-2xl p-4">
                   <div>
                     <h2 className="text-sm font-black text-slate-800">
                       {seccion.label}
@@ -383,23 +391,47 @@ export default function ConfiguracionSitioPage() {
                   <button
                     type="button"
                     onClick={restablecerSeccion}
-                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
+                    className="anim-press flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
                   >
                     <RefreshCw size={11} />
                     Restablecer sección
                   </button>
                 </div>
 
-                {seccion.fields.map((campo) => (
-                  <CampoFormulario
-                    key={campo.key}
-                    campo={campo}
-                    valor={valores[campo.key] ?? ""}
-                    subiendo={subiendo === campo.key}
-                    onCambiar={(valor) => actualizarValor(campo.key, valor)}
-                    onSubir={() => abrirSelectorArchivo(campo)}
-                    onQuitar={(url) => quitarImagen(campo, url)}
-                  />
+                {seccion.subsections.map((sub) => (
+                  <div
+                    key={sub.id}
+                    className="anim-fade-up delay-5 rounded-2xl border border-slate-100 bg-white p-4 space-y-4"
+                  >
+                    <div className="flex items-start gap-2">
+                      <span
+                        className="mt-1 h-2 w-2 rounded-full shrink-0"
+                        style={{ backgroundColor: palette.primary }}
+                      />
+                      <div>
+                        <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide">
+                          {sub.label}
+                        </h3>
+                        {sub.description && (
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {sub.description}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {sub.fields.map((campo) => (
+                      <CampoFormulario
+                        key={campo.key}
+                        campo={campo}
+                        valor={valores[campo.key] ?? ""}
+                        subiendo={subiendo === campo.key}
+                        onCambiar={(valor) => actualizarValor(campo.key, valor)}
+                        onSubir={() => abrirSelectorArchivo(campo)}
+                        onQuitar={(url) => quitarImagen(campo, url)}
+                      />
+                    ))}
+                  </div>
                 ))}
               </div>
 
@@ -415,7 +447,7 @@ export default function ConfiguracionSitioPage() {
                     </span>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 shadow-xs">
+                  <div className="anim-fade-up delay-4 rounded-2xl border border-slate-200 overflow-hidden bg-slate-50 shadow-xs">
                     <div
                       className="flex items-center justify-between gap-3 px-4 py-3 text-white"
                       style={{
@@ -512,18 +544,19 @@ export default function ConfiguracionSitioPage() {
                           >
                             {seccion.label}
                           </p>
-                          <h3 className="text-base font-black text-slate-800 leading-tight">
-                            {valores[`${seccion.id}_titulo`] || seccion.label}
-                          </h3>
-                          {valores[`${seccion.id}_subtitulo`] && (
-                            <p className="text-[11px] font-semibold text-slate-500">
-                              {valores[`${seccion.id}_subtitulo`]}
-                            </p>
-                          )}
-                          <p className="text-[11px] text-slate-600 leading-relaxed whitespace-pre-line">
-                            {valores[`${seccion.id}_descripcion`] ||
-                              "Agrega una descripción para esta sección."}
+                          <p className="text-[11px] text-slate-500">
+                            {seccion.description}
                           </p>
+                          <div className="flex flex-wrap gap-1 pt-1">
+                            {seccion.subsections.map((sub) => (
+                              <span
+                                key={sub.id}
+                                className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600"
+                              >
+                                {sub.label}
+                              </span>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     )}
@@ -629,7 +662,7 @@ function CampoFormulario({
               type="button"
               onClick={onSubir}
               disabled={subiendo}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-white transition disabled:opacity-60"
+              className="anim-press flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-white transition disabled:opacity-60"
               style={{ backgroundColor: palette.primary }}
             >
               {subiendo ? (
@@ -643,7 +676,7 @@ function CampoFormulario({
               <button
                 type="button"
                 onClick={() => onQuitar()}
-                className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 transition"
+                className="anim-press flex items-center gap-1 px-2.5 py-2 rounded-lg text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 transition"
               >
                 <Trash2 size={13} />
                 Quitar
@@ -691,7 +724,7 @@ function CampoFormulario({
                   <button
                     type="button"
                     onClick={() => onQuitar(url)}
-                    className="absolute top-1 right-1 p-1 rounded bg-white/90 text-red-600 opacity-0 group-hover:opacity-100 transition"
+                    className="anim-press absolute top-1 right-1 p-1 rounded bg-white/90 text-red-600 opacity-0 group-hover:opacity-100 transition"
                     title="Quitar imagen"
                   >
                     <Trash2 size={11} />
@@ -713,7 +746,7 @@ function CampoFormulario({
               type="button"
               onClick={onSubir}
               disabled={subiendo || imagenes.length >= 6}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-white transition disabled:opacity-60"
+              className="anim-press flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-bold text-white transition disabled:opacity-60"
               style={{ backgroundColor: palette.primary }}
             >
               {subiendo ? (
@@ -727,7 +760,7 @@ function CampoFormulario({
               <button
                 type="button"
                 onClick={() => onQuitar()}
-                className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 transition"
+                className="anim-press flex items-center gap-1 px-2.5 py-2 rounded-lg text-[11px] font-bold text-red-600 hover:bg-red-50 border border-red-200 transition"
               >
                 <Trash2 size={13} />
                 Quitar todas

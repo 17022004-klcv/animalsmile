@@ -25,6 +25,10 @@ export default function RefugioLandingPage() {
   const { sitePalette, sitioConfig } = useSiteTheme();
   const leer = (clave: string) => leerConfiguracionSitio(sitioConfig, clave);
   const imagenes = parsearGaleriaSitio(leer("inicio_imagenes"));
+  const imagenesEsteriliza = parsearGaleriaSitio(
+    leer("inicio_esteriliza_imagenes"),
+  );
+  const imagenesHorarios = parsearGaleriaSitio(leer("inicio_horarios_imagenes"));
 
   const estadisticas = [
     { valor: "398,235", etiqueta: "Consultas y Rescates", fecha: "JULIO 2025" },
@@ -47,9 +51,9 @@ export default function RefugioLandingPage() {
       <section className="relative w-full overflow-hidden bg-[#1e293b] text-white pt-24 pb-24 md:pt-28 md:pb-28">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Lado Izquierdo */}
-          <div className="lg:col-span-6 space-y-4 z-10">
+          <div className="lg:col-span-6 space-y-4 z-10 anim-fade-up">
             <div
-              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold"
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border text-xs font-bold anim-fade-in delay-1"
               style={{
                 color: sitePalette.primary || "#10b981",
                 backgroundColor: `${sitePalette.primary || "#10b981"}1A`,
@@ -60,7 +64,7 @@ export default function RefugioLandingPage() {
               <span>{leer("inicio_etiqueta") || "Refugio de Animales"}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight leading-tight anim-scale-in delay-5">
               {leer("inicio_titulo") || "Dales una segunda oportunidad a"}{" "}
               <span
                 style={{
@@ -82,7 +86,7 @@ export default function RefugioLandingPage() {
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 href="/adopciones"
-                className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm bg-emerald-500 hover:bg-emerald-600 transition-all duration-200 shadow-lg shadow-emerald-500/30 hover:scale-105"
+                className="flex items-center gap-2 px-6 py-3 rounded-xl text-white font-bold text-sm bg-emerald-500 hover:bg-emerald-600 transition-all duration-200 shadow-lg shadow-emerald-500/30 hover:scale-105 anim-press"
               >
                 <Heart size={16} className="fill-white" />
                 <span>{leer("inicio_cta_primario") || "Adopta Hoy"}</span>
@@ -92,10 +96,10 @@ export default function RefugioLandingPage() {
 
           {/* Lado Derecho: Imagen más compacta */}
           <div className="lg:col-span-6 relative flex justify-center items-center">
-            <div className="absolute -top-6 -right-6 w-56 h-56 md:w-72 md:h-72 bg-emerald-400 rounded-full blur-sm opacity-90 z-0" />
-            <div className="absolute -bottom-4 left-6 w-36 h-36 bg-teal-300 rounded-full z-0 opacity-80" />
+            <div className="absolute -top-6 -right-6 w-56 h-56 md:w-72 md:h-72 bg-emerald-400 rounded-full blur-sm opacity-90 z-0 anim-float" />
+            <div className="absolute -bottom-4 left-6 w-36 h-36 bg-teal-300 rounded-full z-0 opacity-80 anim-float" />
 
-            <div className="relative z-10 overflow-hidden rounded-3xl border-4 border-white/20 shadow-2xl max-w-sm w-full bg-slate-800">
+            <div className="relative z-10 overflow-hidden rounded-3xl border-4 border-white/20 shadow-2xl max-w-sm w-full bg-slate-800 anim-zoom-img anim-fade-up delay-2">
               {imagenes[0] ? (
                 <img
                   src={imagenes[0]}
@@ -116,7 +120,7 @@ export default function RefugioLandingPage() {
         </div>
 
         {/* OLA INFERIOR MÁS DELGADA */}
-        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none">
+        <div className="absolute bottom-0 left-0 w-full overflow-hidden leading-none pointer-events-none anim-fade-in delay-6">
           <svg
             viewBox="0 0 1440 120"
             fill="none"
@@ -135,21 +139,18 @@ export default function RefugioLandingPage() {
       {/* 2. SECCIÓN: CARDS DE SERVICIOS -> FONDO BLANCO PURO (bg-white) */}
       <section className="w-full bg-white py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 text-center">
-          <div className="max-w-3xl mx-auto space-y-4">
+          <div className="max-w-3xl mx-auto space-y-4 anim-fade-up">
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-              Cuidamos con amor la salud de tu futura mascota
+              {leer("inicio_servicios_titulo")}
             </h2>
-            <p className="text-slate-600 leading-relaxed text-sm md:text-base">
-              Nuestro refugio ofrece atención veterinaria integral, alimentación
-              de calidad y programas de socialización. Trabajamos para
-              transformar la vida de los animales rescatados y promover la
-              adopción responsable.
+            <p className="text-slate-600 leading-relaxed text-sm md:text-base whitespace-pre-line">
+              {leer("inicio_servicios_descripcion")}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
             {/* Card 1 */}
-            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group">
+            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group anim-hover-lift anim-fade-up delay-1">
               <div className="z-10 space-y-1">
                 <h3 className="text-3xl font-black">+4.5</h3>
                 <p className="text-xs text-teal-100 font-semibold uppercase tracking-wider">
@@ -167,7 +168,7 @@ export default function RefugioLandingPage() {
             </div>
 
             {/* Card 2 */}
-            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group">
+            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group anim-hover-lift anim-fade-up delay-2">
               <div className="z-10 space-y-1">
                 <h3 className="text-3xl font-black">24/7</h3>
                 <p className="text-sm font-bold pt-6">
@@ -184,7 +185,7 @@ export default function RefugioLandingPage() {
             </div>
 
             {/* Card 3 */}
-            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group">
+            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group anim-hover-lift anim-fade-up delay-3">
               <div className="z-10 space-y-1">
                 <h3 className="text-3xl font-black">$0.00</h3>
                 <p className="text-xs text-teal-100 font-medium">
@@ -202,7 +203,7 @@ export default function RefugioLandingPage() {
             </div>
 
             {/* Card 4 */}
-            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group">
+            <div className="relative overflow-hidden rounded-3xl bg-teal-500 text-white p-6 text-left shadow-lg flex flex-col justify-between min-h-[220px] group anim-hover-lift anim-fade-up delay-4">
               <div className="z-10 space-y-1">
                 <h3 className="text-3xl font-black">+110</h3>
                 <p className="text-xs text-teal-100 font-semibold uppercase tracking-wider">
@@ -225,18 +226,26 @@ export default function RefugioLandingPage() {
       {/* 3. SECCIÓN: BANNER PROMOCIONAL -> FONDO TURQUESA SUAVE (bg-teal-100/70) */}
       <section className="relative w-full overflow-hidden bg-teal-100/70 border-y border-teal-200/80 py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-3 text-center md:text-left z-10 max-w-xl">
+          <div className="space-y-3 text-center md:text-left z-10 max-w-xl anim-fade-up">
             <h3 className="text-3xl md:text-4xl font-extrabold text-teal-950">
-              Cuida su salud, protege su futuro.
+              {leer("inicio_esteriliza_titulo")}
             </h3>
             <p className="text-2xl md:text-3xl font-black text-teal-700">
-              ¡Esteriliza a tus mascotas!
+              {leer("inicio_esteriliza_subtitulo")}
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center justify-center">
-            <div className="relative w-48 h-48 bg-white/70 rounded-full p-4 border-4 border-white shadow-xl flex items-center justify-center">
-              <Syringe className="w-24 h-24 text-teal-700 rotate-45" />
+          <div className="relative z-10 flex items-center justify-center anim-fade-up delay-2">
+            <div className="relative w-48 h-48 bg-white/70 rounded-full p-4 border-4 border-white shadow-xl flex items-center justify-center overflow-hidden anim-zoom-img">
+              {imagenesEsteriliza[0] ? (
+                <img
+                  src={imagenesEsteriliza[0]}
+                  alt="Esterilización"
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <Syringe className="w-24 h-24 text-teal-700 rotate-45" />
+              )}
             </div>
           </div>
         </div>
@@ -245,7 +254,7 @@ export default function RefugioLandingPage() {
       {/* 4. SECCIÓN: ESTADÍSTICAS -> FONDO GRIS CLARO / PIZARRA (bg-slate-50) */}
       <section className="w-full bg-slate-50 py-20 border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 opacity-75">
+          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-6 opacity-75 anim-fade-up">
             {[
               Home,
               PawPrint,
@@ -257,20 +266,19 @@ export default function RefugioLandingPage() {
             ].map((Icon, idx) => (
               <div
                 key={idx}
-                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"
+                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 anim-pulse"
               >
                 <Icon size={24} />
               </div>
             ))}
           </div>
 
-          <div className="text-center space-y-2 max-w-2xl mx-auto">
+          <div className="text-center space-y-2 max-w-2xl mx-auto anim-fade-up delay-1">
             <h2 className="text-3xl font-extrabold text-slate-900">
-              Nuestros logros en cifras
+              {leer("inicio_cifras_titulo")}
             </h2>
-            <p className="text-xs md:text-sm text-slate-500">
-              Cada rescate representa una historia, una vida salvada y una
-              familia acompañada.
+            <p className="text-xs md:text-sm text-slate-500 whitespace-pre-line">
+              {leer("inicio_cifras_subtitulo")}
             </p>
           </div>
 
@@ -278,7 +286,7 @@ export default function RefugioLandingPage() {
             {estadisticas.map((item, index) => (
               <div
                 key={index}
-                className="bg-white border-2 border-emerald-500/20 shadow-sm rounded-2xl p-6 text-center space-y-2 transition-transform hover:-translate-y-1"
+                className={`bg-white border-2 border-emerald-500/20 shadow-sm rounded-2xl p-6 text-center space-y-2 transition-transform hover:-translate-y-1 anim-hover-lift anim-fade-up delay-${index + 1}`}
               >
                 <p className="text-3xl md:text-4xl font-black text-emerald-600">
                   {item.valor}
@@ -298,12 +306,36 @@ export default function RefugioLandingPage() {
       {/* 5. SECCIÓN: HORARIOS -> FONDO CELESTE MUY SUAVE (bg-sky-50/70) */}
       <section className="w-full bg-sky-50/70 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 text-center">
-            Horarios de atención
-          </h2>
+          <div className="text-center space-y-2 max-w-2xl mx-auto anim-fade-up">
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
+              {leer("inicio_horarios_titulo")}
+            </h2>
+            {leer("inicio_horarios_subtitulo") && (
+              <p className="text-xs md:text-sm text-slate-500 whitespace-pre-line">
+                {leer("inicio_horarios_subtitulo")}
+              </p>
+            )}
+          </div>
+
+          {imagenesHorarios.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-4 anim-fade-up delay-1">
+              {imagenesHorarios.slice(0, 4).map((url, index) => (
+                <div
+                  key={`${url}-${index}`}
+                  className={`w-40 h-28 rounded-2xl overflow-hidden border-2 border-white shadow-md bg-slate-200 anim-zoom-img anim-hover-lift delay-${Math.min(index + 1, 4)}`}
+                >
+                  <img
+                    src={url}
+                    alt={`Horarios ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-white rounded-3xl p-8 space-y-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-3xl p-8 space-y-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow anim-hover-lift anim-fade-up delay-2">
               <div className="inline-flex items-center gap-2 text-emerald-600 font-bold text-xl">
                 <Calendar className="w-6 h-6" />
                 <h3>Consulta Externa y Adopciones</h3>
@@ -319,7 +351,7 @@ export default function RefugioLandingPage() {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 space-y-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow">
+            <div className="bg-white rounded-3xl p-8 space-y-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-shadow anim-hover-lift anim-fade-up delay-3">
               <div className="inline-flex items-center gap-2 text-rose-600 font-bold text-xl">
                 <Activity className="w-6 h-6" />
                 <h3>Emergencias Rescates</h3>

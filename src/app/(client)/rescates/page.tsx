@@ -29,7 +29,11 @@ import {
 export default function RescatesPage() {
   const { sitePalette, sitioConfig } = useSiteTheme();
   const leer = (clave: string) => leerConfiguracionSitio(sitioConfig, clave);
-  const imagenes = parsearGaleriaSitio(leer("rescates_imagenes"));
+  const imagenesHero = parsearGaleriaSitio(leer("rescates_hero_imagenes"));
+  const imagenesCifras = parsearGaleriaSitio(leer("rescates_cifras_imagenes"));
+  const imagenesProtocolo = parsearGaleriaSitio(
+    leer("rescates_protocolo_imagenes"),
+  );
 
   // Formulario rápido de reporte de emergencia
   const [reporteEnviado, setReporteEnviado] = useState(false);
@@ -83,7 +87,7 @@ export default function RescatesPage() {
       descripcion:
         "Recepción de reportes comunitarios y despliegue de patrullas equipadas para rescates en zonas urbanas o de difícil acceso.",
       imagen:
-        imagenes[1] ||
+        imagenesProtocolo[1] ||
         "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=700&q=80",
       etiqueta: "Brigada 24 Horas",
     },
@@ -93,7 +97,7 @@ export default function RescatesPage() {
       descripcion:
         "Estabilización médica in situ, control de hipotermia, oxigenoterapia de urgencia y traslado en nuestra unidad móvil especializada.",
       imagen:
-        imagenes[2] ||
+        imagenesProtocolo[2] ||
         "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&w=700&q=80",
       etiqueta: "Unidad Móvil",
     },
@@ -103,7 +107,7 @@ export default function RescatesPage() {
       descripcion:
         "Exámenes clínicos, laboratorio, desparasitación, vacunación y alojamiento en áreas de aislamiento para prevenir contagios.",
       imagen:
-        imagenes[3] ||
+        imagenesProtocolo[3] ||
         "https://images.unsplash.com/photo-1532938911079-1b06ac7ceec7?auto=format&fit=crop&w=700&q=80",
       etiqueta: "Área Clínica",
     },
@@ -113,7 +117,7 @@ export default function RescatesPage() {
       descripcion:
         "Terapia física, nutrición personalizada, apoyo etológico para sanar traumas y adaptación para su posterior adopción responsable.",
       imagen:
-        imagenes[4] ||
+        imagenesProtocolo[4] ||
         "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=700&q=80",
       etiqueta: "Segunda Oportunidad",
     },
@@ -186,9 +190,9 @@ export default function RescatesPage() {
       <section className="relative w-full bg-[#1e2749] text-white pt-24 md:pt-28 overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 items-center relative z-10 pb-14">
           {/* Lado Izquierdo: Titular */}
-          <div className="md:col-span-7 space-y-5">
+          <div className="md:col-span-7 space-y-5 anim-fade-up">
             <div
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border text-xs font-bold anim-scale-in delay-5"
               style={{
                 color: sitePalette.primary || "#f59e0b",
                 backgroundColor: `${sitePalette.primary || "#f59e0b"}1A`,
@@ -196,45 +200,31 @@ export default function RescatesPage() {
               }}
             >
               <Siren size={15} className="animate-pulse" />
-              <span>
-                {leer("rescates_subtitulo") || "Rescate Animal y Auxilio 24/7"}
-              </span>
+              <span>{leer("rescates_hero_subtitulo")}</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight">
-              {leer("rescates_titulo") ? (
-                <>
-                  {leer("rescates_titulo")}{" "}
-                  <span className="text-emerald-400">
-                    en {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              ) : (
-                <>
-                  Rescate y Esperanza en{" "}
-                  <span className="text-emerald-400">
-                    {leer("sitio_nombre") || "AnimalSmile"}
-                  </span>
-                </>
-              )}
+              {leer("rescates_hero_titulo")}{" "}
+              <span className="text-emerald-400">
+                {leer("sitio_nombre") || "AnimalSmile"}
+              </span>
             </h1>
 
-            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed">
-              {leer("rescates_descripcion") ||
-                "Atendemos llamados de emergencia, casos de abandono y animales en peligro extremo. Brindamos auxilio médico inmediato, rehabilitación integral y el camino hacia un hogar lleno de amor."}
+            <p className="text-slate-300 text-base md:text-lg max-w-xl leading-relaxed whitespace-pre-line">
+              {leer("rescates_hero_descripcion")}
             </p>
 
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <a
                 href="#reportar-emergencia"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/30 transition-all hover:-translate-y-0.5 active:translate-y-0 anim-press"
               >
                 <Siren size={18} />
                 <span>Reportar un Rescate</span>
               </a>
               <a
                 href="#protocolo-rescate"
-                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-0.5 anim-press"
               >
                 <LifeBuoy size={18} />
                 <span>Cómo Actuamos</span>
@@ -244,11 +234,11 @@ export default function RescatesPage() {
 
           {/* Lado Derecho: Imagen Recortada / Ilustración de Mascota Rescatada */}
           <div className="md:col-span-5 flex justify-center md:justify-end">
-            <div className="relative w-64 h-64 sm:w-72 sm:h-72">
-              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-2xl" />
-              {imagenes[0] ? (
+            <div className="relative w-64 h-64 sm:w-72 sm:h-72 anim-zoom-img anim-fade-up delay-2">
+              <div className="absolute inset-0 bg-emerald-500/20 rounded-full blur-2xl anim-pulse" />
+              {imagenesHero[0] ? (
                 <img
-                  src={imagenes[0]}
+                  src={imagenesHero[0]}
                   alt="Rescate animal"
                   className="w-full h-full object-contain relative z-10 drop-shadow-2xl"
                 />
@@ -287,20 +277,18 @@ export default function RescatesPage() {
       </section>
 
       {/* 2. SECCIÓN: NUESTRA HUELLA EN CIFRAS -> FONDO GRIS PIZARRA SUAVE (bg-slate-50) */}
-      <section className="w-full bg-[#F8FAFC]  py-14 md:py-16 border-b border-slate-200/60">
+      <section className="w-full bg-[#F8FAFC]  py-14 md:py-16 border-b border-slate-200/60 anim-fade-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 text-center">
-          <div className="max-w-3xl mx-auto space-y-3">
+          <div className="max-w-3xl mx-auto space-y-3 anim-fade-up">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-xs font-bold uppercase tracking-wider">
               <Activity size={14} />
               <span>Impacto Real</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-              Nuestra huella en rescates
+              {leer("rescates_cifras_titulo")}
             </h2>
-            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-              Detrás de cada cifra hay un latido salvado, una historia de dolor
-              superada y una familia transformada. Este tablero refleja la labor
-              incansable de nuestro equipo de auxilio y rescate.
+            <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
+              {leer("rescates_cifras_subtitulo")}
             </p>
           </div>
 
@@ -309,7 +297,7 @@ export default function RescatesPage() {
             {estadisticasRescates.map((stat, idx) => (
               <div
                 key={idx}
-                className={`relative overflow-hidden rounded-2xl ${stat.colorFondo} text-white p-6 text-left shadow-md flex flex-col justify-between h-44 group hover:-translate-y-1 transition-all`}
+                className={`relative overflow-hidden rounded-2xl ${stat.colorFondo} text-white p-6 text-left shadow-md flex flex-col justify-between h-44 group hover:-translate-y-1 transition-all anim-hover-lift anim-fade-up delay-${Math.min(idx + 1, 5)}`}
               >
                 <div className="z-10">
                   <p className="text-3xl font-black">{stat.cifra}</p>
@@ -326,12 +314,12 @@ export default function RescatesPage() {
 
           {/* Galería de fotos con marcos orgánicos de colores detrás */}
           <div className="flex flex-wrap justify-center items-center gap-6 pt-6">
-            <div className="relative group">
+            <div className="relative group anim-fade-up delay-1">
               <div className="absolute -inset-2 bg-amber-400 rounded-3xl -rotate-3 transition-transform group-hover:rotate-0" />
-              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200">
+              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200 anim-zoom-img">
                 <img
                   src={
-                    imagenes[5] ||
+                    imagenesCifras[0] ||
                     "https://images.unsplash.com/photo-1548767797-d8c844163c4c?auto=format&fit=crop&w=600&q=80"
                   }
                   alt="Brigada de rescate"
@@ -340,12 +328,12 @@ export default function RescatesPage() {
               </div>
             </div>
 
-            <div className="relative group">
+            <div className="relative group anim-fade-up delay-2">
               <div className="absolute -inset-2 bg-rose-500 rounded-3xl rotate-2 transition-transform group-hover:rotate-0" />
-              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200">
+              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200 anim-zoom-img">
                 <img
                   src={
-                    imagenes[6] ||
+                    imagenesCifras[1] ||
                     "https://images.unsplash.com/photo-1576201836106-db1758fd1c97?auto=format&fit=crop&w=600&q=80"
                   }
                   alt="Atención médica urgente"
@@ -354,12 +342,12 @@ export default function RescatesPage() {
               </div>
             </div>
 
-            <div className="relative group">
+            <div className="relative group anim-fade-up delay-3">
               <div className="absolute -inset-2 bg-emerald-500 rounded-3xl -rotate-2 transition-transform group-hover:rotate-0" />
-              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200">
+              <div className="relative w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-lg border-2 border-white bg-slate-200 anim-zoom-img">
                 <img
                   src={
-                    imagenes[7] ||
+                    imagenesCifras[2] ||
                     "https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=600&q=80"
                   }
                   alt="Segunda oportunidad"
@@ -378,31 +366,29 @@ export default function RescatesPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
           {/* Lado Izquierdo: Descripción e Ilustración con Marco Orgánico */}
-          <div className="lg:col-span-5 space-y-6">
+          <div className="lg:col-span-5 space-y-6 anim-fade-up">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               <Ambulance size={14} />
               <span>Protocolo de Salvamento</span>
             </div>
 
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 leading-tight">
-              ¿Cómo funciona cada operativo de rescate?
+              {leer("rescates_protocolo_titulo")}
             </h2>
 
-            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-              No se trata solo de retirar a un animal de la calle; ejecutamos un
-              proceso médico, ético y emocional riguroso para devolverles la
-              dignidad y la salud antes de entregarlos en adopción.
+            <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
+              {leer("rescates_protocolo_descripcion")}
             </p>
 
             <div className="relative mt-8 pt-4 flex justify-center">
-              <div className="absolute -inset-4 bg-teal-200 rounded-full blur-lg opacity-70 z-0" />
-              <div className="relative z-10 w-full max-w-xs h-76 rounded-3xl bg-teal-400 p-5 border-4 border-white shadow-xl flex items-center justify-center overflow-hidden">
+              <div className="absolute -inset-4 bg-teal-200 rounded-full blur-lg opacity-70 z-0 anim-pulse" />
+              <div className="relative z-10 w-full max-w-xs h-76 rounded-3xl bg-teal-400 p-5 border-4 border-white shadow-xl flex items-center justify-center overflow-hidden anim-zoom-img">
                 <div className="absolute top-2 right-2 text-teal-700/40">
                   <Sparkles size={48} />
                 </div>
-                {imagenes[8] ? (
+                {imagenesProtocolo[0] ? (
                   <img
-                    src={imagenes[8]}
+                    src={imagenesProtocolo[0]}
                     alt="Protocolo de rescate"
                     className="w-full h-full object-cover rounded-2xl"
                   />
@@ -430,10 +416,10 @@ export default function RescatesPage() {
             {etapasProtocolo.map((etapa, index) => (
               <div
                 key={index}
-                className="bg-slate-50 rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+                className={`bg-slate-50 rounded-3xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 group anim-hover-lift anim-fade-up delay-${Math.min(index + 1, 4)}`}
               >
                 <div className="space-y-3">
-                  <div className="relative h-40 rounded-2xl overflow-hidden bg-slate-200 border border-slate-100">
+                  <div className="relative h-40 rounded-2xl overflow-hidden bg-slate-200 border border-slate-100 anim-zoom-img">
                     <img
                       src={etapa.imagen}
                       alt={etapa.titulo}
@@ -465,18 +451,16 @@ export default function RescatesPage() {
       {/* 4. SECCIÓN: HISTORIAS DE RESCATE -> FONDO ROSA/CÁLIDO MUY SUAVE (bg-rose-50/60) */}
       <section className="w-full bg-rose-50/60 border-y border-rose-100 py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
+          <div className="text-center max-w-3xl mx-auto space-y-3 anim-fade-up">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 text-rose-800 text-xs font-bold uppercase tracking-wider">
               <Heart size={14} className="fill-rose-500 text-rose-500" />
               <span>Vidas Transformadas</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900">
-              Historias de supervivencia y amor
+              {leer("rescates_historias_titulo")}
             </h2>
-            <p className="text-slate-600 text-sm md:text-base leading-relaxed">
-              Cada rescate comienza con dolor e incertidumbre, pero con
-              paciencia médica y cariño culmina en una segunda oportunidad de
-              vida.
+            <p className="text-slate-600 text-sm md:text-base leading-relaxed whitespace-pre-line">
+              {leer("rescates_historias_subtitulo")}
             </p>
           </div>
 
@@ -484,10 +468,10 @@ export default function RescatesPage() {
             {casosTransformacion.map((caso, index) => (
               <div
                 key={index}
-                className="bg-white rounded-3xl p-5 border border-rose-100 shadow-sm hover:shadow-lg transition-all space-y-4 flex flex-col justify-between group"
+                className={`bg-white rounded-3xl p-5 border border-rose-100 shadow-sm hover:shadow-lg transition-all space-y-4 flex flex-col justify-between group anim-hover-lift anim-fade-up delay-${index + 1}`}
               >
                 <div className="space-y-3">
-                  <div className="relative h-48 rounded-2xl overflow-hidden bg-slate-200">
+                  <div className="relative h-48 rounded-2xl overflow-hidden bg-slate-200 anim-zoom-img">
                     <img
                       src={caso.foto}
                       alt={caso.nombre}
@@ -531,17 +515,16 @@ export default function RescatesPage() {
       {/* 5. SECCIÓN: GUÍA CIUDADANA -> FRANJA DE ANCHO COMPLETO OSCURA (bg-slate-900) */}
       <section className="w-full bg-slate-900 text-white py-16 md:py-20 relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8">
-          <div className="max-w-2xl space-y-3">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold">
+          <div className="max-w-2xl space-y-3 anim-fade-up">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold anim-fade-in delay-6">
               <AlertTriangle size={14} />
               <span>Protocolo para la Comunidad</span>
             </div>
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight">
-              ¿Encontraste un animal en peligro o maltratado?
+              {leer("rescates_guia_titulo")}
             </h2>
-            <p className="text-slate-300 text-sm md:text-base leading-relaxed">
-              Tus acciones en los primeros minutos pueden salvarle la vida.
-              Sigue estos cuatro pasos antes de la llegada de los rescatistas.
+            <p className="text-slate-300 text-sm md:text-base leading-relaxed whitespace-pre-line">
+              {leer("rescates_guia_descripcion")}
             </p>
           </div>
 
@@ -549,7 +532,7 @@ export default function RescatesPage() {
             {pasosCiudadanos.map((paso, idx) => (
               <div
                 key={idx}
-                className="bg-slate-800/80 border border-white/10 rounded-2xl p-5 space-y-3 backdrop-blur-sm hover:border-emerald-400/50 transition-colors"
+                className={`bg-slate-800/80 border border-white/10 rounded-2xl p-5 space-y-3 backdrop-blur-sm hover:border-emerald-400/50 transition-colors anim-hover-lift anim-fade-up delay-${idx + 1}`}
               >
                 <div className="flex items-center justify-between">
                   <span className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-sm">
@@ -576,19 +559,17 @@ export default function RescatesPage() {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
           {/* Tarjeta de Líneas de Atención Directa */}
-          <div className="lg:col-span-5 bg-gradient-to-br from-rose-600 to-rose-700 text-white rounded-3xl p-8 flex flex-col justify-between shadow-xl space-y-6">
+          <div className="lg:col-span-5 bg-gradient-to-br from-rose-600 to-rose-700 text-white rounded-3xl p-8 flex flex-col justify-between shadow-xl space-y-6 anim-slide-left">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/20 rounded-full text-xs font-bold backdrop-blur-md">
                 <Siren size={15} />
                 <span>Línea Directa de Urgencias</span>
               </div>
               <h3 className="text-2xl sm:text-3xl font-black">
-                Central de Rescates 24 Horas
+                {leer("rescates_reporte_titulo")}
               </h3>
-              <p className="text-rose-100 text-sm leading-relaxed">
-                Si la vida del animal corre riesgo inminente, no esperes.
-                Comunícate por teléfono o WhatsApp de inmediato para despachar
-                nuestra brigada móvil más cercana.
+              <p className="text-rose-100 text-sm leading-relaxed whitespace-pre-line">
+                {leer("rescates_reporte_descripcion")}
               </p>
 
               <div className="space-y-3 pt-4 text-sm font-semibold">
@@ -625,14 +606,14 @@ export default function RescatesPage() {
             <div className="pt-4 border-t border-white/20 flex flex-wrap gap-3">
               <Link
                 href="/adopciones"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-rose-700 font-bold text-xs hover:bg-rose-50 transition-colors shadow-sm"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white text-rose-700 font-bold text-xs hover:bg-rose-50 transition-colors shadow-sm anim-press"
               >
                 <PawPrint size={14} />
                 <span>Adoptar un Rescatado</span>
               </Link>
               <Link
                 href="/donar"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-800/60 hover:bg-rose-800 text-white font-bold text-xs transition-colors border border-white/20"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-rose-800/60 hover:bg-rose-800 text-white font-bold text-xs transition-colors border border-white/20 anim-press"
               >
                 <Heart size={14} />
                 <span>Fondo Médico de Rescate</span>
@@ -641,7 +622,7 @@ export default function RescatesPage() {
           </div>
 
           {/* Formulario Rápido de Reporte de Caso */}
-          <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-white rounded-3xl p-8 border border-slate-200/80 shadow-md flex flex-col justify-between anim-slide-right delay-1">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 text-slate-800 font-bold text-lg">
                 <Send size={18} className="text-emerald-600" />
@@ -674,7 +655,7 @@ export default function RescatesPage() {
                       setDescripcionReporte("");
                       setContactoReporte("");
                     }}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition anim-press"
                   >
                     Reportar otro caso
                   </button>
@@ -730,7 +711,7 @@ export default function RescatesPage() {
                   <div className="pt-2">
                     <button
                       type="submit"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all hover:-translate-y-0.5"
+                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-md transition-all hover:-translate-y-0.5 anim-press"
                     >
                       <Send size={14} />
                       <span>Enviar Reporte a Rescates</span>

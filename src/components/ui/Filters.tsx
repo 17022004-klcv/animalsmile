@@ -15,14 +15,14 @@ export function SearchInput({
   placeholder = "Buscador...",
 }: SearchInputProps) {
   return (
-    <div className="relative flex-1 max-w-xs">
+    <div className="anim-fade-in relative flex-1 max-w-xs">
       <Search className="absolute left-3.5 top-2.5 h-4 w-4 text-slate-400 pointer-events-none" />
       <input
         type="text"
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+        className="anim-press w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
       />
     </div>
   );
@@ -42,7 +42,7 @@ export function SelectFilter({
   label,
 }: SelectFilterProps) {
   return (
-    <label className="flex items-center gap-2">
+    <label className="anim-fade-in flex items-center gap-2">
       {label && (
         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">
           {label}
@@ -51,7 +51,7 @@ export function SelectFilter({
       <select
         value={value}
         onChange={onChange}
-        className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+        className="anim-press bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
       >
         {options.map((opt) => (
           <option key={opt.value} value={opt.value}>
@@ -101,20 +101,20 @@ export function FilterBar({
   const hayFiltros = especie || estado || desde || hasta;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 my-4 shrink-0">
+    <div className="anim-fade-in flex flex-wrap items-center gap-3 my-4 shrink-0">
       <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase">
         <SlidersHorizontal size={13} />
         Filtros
       </span>
 
-      <label className="flex items-center gap-2">
+      <label className="anim-fade-in flex items-center gap-2">
         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">
           Especie
         </span>
         <select
           value={especie}
           onChange={(e) => onEspecieChange(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+          className="anim-press bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
         >
           <option value="">Todas</option>
           {especies.map((opt) => (
@@ -125,14 +125,14 @@ export function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="anim-fade-in flex items-center gap-2">
         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">
           Estado
         </span>
         <select
           value={estado}
           onChange={(e) => onEstadoChange(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+          className="anim-press bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
         >
           <option value="">Todos</option>
           {estados.map((opt) => (
@@ -143,7 +143,7 @@ export function FilterBar({
         </select>
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="anim-fade-in flex items-center gap-2">
         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">
           Desde
         </span>
@@ -151,11 +151,11 @@ export function FilterBar({
           type="date"
           value={desde}
           onChange={(e) => onDesdeChange(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+          className="anim-press bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
         />
       </label>
 
-      <label className="flex items-center gap-2">
+      <label className="anim-fade-in flex items-center gap-2">
         <span className="text-[10px] font-bold text-slate-400 uppercase whitespace-nowrap">
           Hasta
         </span>
@@ -163,14 +163,14 @@ export function FilterBar({
           type="date"
           value={hasta}
           onChange={(e) => onHastaChange(e.target.value)}
-          className="bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+          className="anim-press bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
         />
       </label>
 
       {hayFiltros && (
         <button
           onClick={onLimpiar}
-          className="flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
+          className="anim-press flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
           title="Limpiar filtros"
         >
           <X size={13} />

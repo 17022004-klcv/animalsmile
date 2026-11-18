@@ -4,6 +4,7 @@ import React, { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/src/context/ThemeContext";
+import { useToast } from "@/src/context/ToastContext";
 import { Button } from "@/src/components/ui/Button";
 import {
   actualizarDonacionEspecie,
@@ -62,6 +63,7 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function FormularioDonacionEspecie() {
   const { palette } = useTheme();
+  const { mostrarToast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
   const idDonacion = searchParams.get("id");
@@ -176,6 +178,7 @@ function FormularioDonacionEspecie() {
     const mensaje = validarPaso(paso);
     if (mensaje) {
       setError(mensaje);
+      mostrarToast(mensaje, "error");
       return;
     }
     setError(null);
@@ -206,6 +209,7 @@ function FormularioDonacionEspecie() {
       if (mensaje) {
         setPaso(indice);
         setError(mensaje);
+        mostrarToast(mensaje, "error");
         return;
       }
     }
@@ -227,14 +231,17 @@ function FormularioDonacionEspecie() {
     try {
       if (modoEdicion && idDonacion) {
         await actualizarDonacionEspecie(idDonacion, payload);
+        mostrarToast("Donación en especie actualizada correctamente.", "success");
       } else {
         await crearDonacionEspecie(payload);
+        mostrarToast("Donación en especie registrada correctamente.", "success");
       }
       router.push("/admin/modules/Donations/InKindDonations");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar el registro.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar el registro.";
+      setError(mensaje);
+      mostrarToast(mensaje, "error");
     } finally {
       setGuardando(false);
     }
@@ -247,13 +254,13 @@ function FormularioDonacionEspecie() {
     <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
       <form
         onSubmit={handleSubmit}
-        className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden"
+        className="anim-fade-in h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden"
       >
         <div className="flex items-center justify-between gap-4 shrink-0 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3 min-w-0">
             <Link
               href="/admin/modules/Donations/InKindDonations"
-              className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0"
+              className="anim-press p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0"
               title="Volver al listado"
             >
               <ArrowLeft size={16} />
@@ -296,7 +303,7 @@ function FormularioDonacionEspecie() {
           </span>
         </div>
 
-        <div className="shrink-0 pt-5">
+        <div className="anim-fade-up delay-1 shrink-0 pt-5">
           <ol className="flex items-center gap-2 sm:gap-3">
             {PASOS.map((p, indice) => {
               const activo = indice === paso;
@@ -314,7 +321,7 @@ function FormularioDonacionEspecie() {
                     onClick={() => irAPaso(indice)}
                     disabled={!habilitado}
                     aria-current={activo ? "step" : undefined}
-                    className={`flex items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition text-left min-w-0 ${
+                    className={`anim-press flex items-center gap-2.5 rounded-2xl px-1.5 py-1.5 transition text-left min-w-0 ${
                       habilitado ? "cursor-pointer" : "cursor-not-allowed opacity-60"
                     }`}
                   >
@@ -381,7 +388,7 @@ function FormularioDonacionEspecie() {
           ) : (
             <div className="mx-auto w-full max-w-3xl space-y-5 py-1">
               {paso === 0 && (
-                <section className="space-y-5">
+                <section className="anim-fade-up delay-2 space-y-5">
                   <div className="flex items-start gap-3">
                     <span
                       className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
@@ -403,7 +410,7 @@ function FormularioDonacionEspecie() {
                     </div>
                   </div>
 
-                  <div className="grid gap-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:grid-cols-2">
+                  <div className="anim-fade-up delay-3 grid gap-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:grid-cols-2">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Nombre del Donante
@@ -436,7 +443,7 @@ function FormularioDonacionEspecie() {
                       </div>
                     </div>
 
-                    <div className="sm:col-span-2 p-4 bg-white rounded-xl border border-slate-200 flex items-center gap-3">
+                    <div className="anim-fade-up delay-4 sm:col-span-2 p-4 bg-white rounded-xl border border-slate-200 flex items-center gap-3">
                       <span
                         className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                         style={{
@@ -467,7 +474,7 @@ function FormularioDonacionEspecie() {
               )}
 
               {paso === 1 && (
-                <section className="space-y-5">
+                <section className="anim-fade-up delay-2 space-y-5">
                   <div className="flex items-start gap-3">
                     <span
                       className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
@@ -488,7 +495,7 @@ function FormularioDonacionEspecie() {
                     </div>
                   </div>
 
-                  <div className="grid gap-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:grid-cols-2">
+                  <div className="anim-fade-up delay-3 grid gap-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5 sm:grid-cols-2">
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Tipo de Donación *
@@ -613,7 +620,7 @@ function FormularioDonacionEspecie() {
               )}
 
               {paso === 2 && (
-                <section className="space-y-5">
+                <section className="anim-fade-up delay-2 space-y-5">
                   <div className="flex items-start gap-3">
                     <span
                       className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
@@ -635,7 +642,7 @@ function FormularioDonacionEspecie() {
                     </div>
                   </div>
 
-                  <div className="space-y-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
+                  <div className="anim-fade-up delay-3 space-y-5 rounded-2xl border border-slate-100 bg-slate-50/50 p-5">
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
                         Descripción
@@ -650,7 +657,7 @@ function FormularioDonacionEspecie() {
                     </div>
 
                     <div
-                      className="rounded-2xl p-5 text-white shadow-sm"
+                      className="anim-scale-in delay-4 rounded-2xl p-5 text-white shadow-sm"
                       style={{
                         background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})`,
                       }}

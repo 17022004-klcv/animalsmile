@@ -9,6 +9,7 @@ import {
   LockKeyhole,
   ShieldCheck,
 } from "lucide-react";
+import { Validaciones } from "@/src/utils/validaciones";
 import "./puppy-register.css";
 
 const PASSWORD_IDS = ["register-password", "register-confirm-password"];
@@ -55,21 +56,27 @@ export default function PuppyRegister() {
     setError("");
     setSuccess("");
 
-    const nombreLimpio = nombre.trim();
-    const apellidoLimpio = apellido.trim();
-
-    if (!nombreLimpio || !apellidoLimpio) {
-      setError("Nombre y apellido son obligatorios.");
+    const errNombre = Validaciones.validarSoloLetras(nombre, "Nombre", {
+      requerido: true,
+      maxLength: 50,
+    });
+    if (errNombre) {
+      setError(errNombre);
       return;
     }
 
-    if (nombreLimpio.length > 100 || apellidoLimpio.length > 100) {
-      setError("Nombre y apellido no pueden superar 100 caracteres.");
+    const errApellido = Validaciones.validarSoloLetras(apellido, "Apellido", {
+      requerido: true,
+      maxLength: 50,
+    });
+    if (errApellido) {
+      setError(errApellido);
       return;
     }
 
-    if (email.trim().length > 150) {
-      setError("El correo electrónico no es válido.");
+    const errEmail = Validaciones.validarEmail(email, true);
+    if (errEmail) {
+      setError(errEmail);
       return;
     }
 
@@ -94,8 +101,8 @@ export default function PuppyRegister() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre: nombreLimpio,
-          apellido: apellidoLimpio,
+          nombre: nombre.trim(),
+          apellido: apellido.trim(),
           email: email.trim().toLowerCase(),
           password,
         }),
@@ -244,9 +251,11 @@ export default function PuppyRegister() {
                 type="text"
                 autoComplete="given-name"
                 required
-                maxLength={100}
+                maxLength={50}
                 value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
+                onChange={(e) =>
+                  setNombre(Validaciones.formatearSoloLetras(e.target.value))
+                }
                 placeholder=" "
                 className="puppy-input"
               />
@@ -262,9 +271,11 @@ export default function PuppyRegister() {
                 type="text"
                 autoComplete="family-name"
                 required
-                maxLength={100}
+                maxLength={50}
                 value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
+                onChange={(e) =>
+                  setApellido(Validaciones.formatearSoloLetras(e.target.value))
+                }
                 placeholder=" "
                 className="puppy-input"
               />

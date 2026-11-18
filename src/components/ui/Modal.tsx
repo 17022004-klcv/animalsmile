@@ -17,7 +17,13 @@ const TAMANOS: Record<NonNullable<ModalProps["size"]>, string> = {
   xl: "max-w-4xl",
 };
 
-export function Modal({ open, onClose, title, children, size = "md" }: ModalProps) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  size = "md",
+}: ModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -33,11 +39,11 @@ export function Modal({ open, onClose, title, children, size = "md" }: ModalProp
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
+      className="anim-fade-in fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className={`w-full ${TAMANOS[size]} bg-white rounded-2xl shadow-xl p-6 space-y-4`}
+        className={`anim-modal-in w-full ${TAMANOS[size]} bg-white rounded-2xl shadow-xl p-6 space-y-4 my-8 max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

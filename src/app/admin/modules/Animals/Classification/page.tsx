@@ -6,6 +6,8 @@ import { Button } from "@/src/components/ui/Button";
 import { SearchInput } from "@/src/components/ui/Filters";
 import { TabsSwitcher } from "@/src/components/ui/TabsSwitcher";
 import { Modal } from "@/src/components/ui/Modal";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 
 import {
   Download,
@@ -65,6 +67,17 @@ export default function ClasificacionesPage() {
     titulo: string;
     filas: [string, string][];
   } | null>(null);
+  const [confirmarEliminar, setConfirmarEliminar] = useState<{
+    tipo: "especie" | "taxonomia";
+    id: number;
+    nombre: string;
+  } | null>(null);
+  const [eliminando, setEliminando] = useState(false);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    type: ToastTipo;
+  }>({ open: false, message: "", type: "success" });
 
   const cargarDatos = useCallback(async () => {
     try {
@@ -156,31 +169,33 @@ export default function ClasificacionesPage() {
         }
       }
 
+      const mensajeExito = esTaxonomia
+        ? modal.modo === "crear"
+          ? "Taxonomía creada correctamente."
+          : "Taxonomía actualizada correctamente."
+        : modal.modo === "crear"
+          ? "Especie creada correctamente."
+          : "Especie actualizada correctamente.";
+
       setModal(null);
       await cargarDatos();
+      setToast({ open: true, message: mensajeExito, type: "success" });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar el registro.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar el registro.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setGuardando(false);
     }
   };
 
-  const eliminar = async (
-    tipo: "especie" | "taxonomia",
-    id: number,
-    nombre: string,
-  ) => {
-    if (
-      !window.confirm(
-        `¿Seguro que quieres eliminar "${nombre}"? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
+  const eliminar = async () => {
+    if (!confirmarEliminar) return;
+    const { tipo, id, nombre } = confirmarEliminar;
 
     setError(null);
+    setEliminando(true);
     try {
       if (tipo === "especie") {
         await eliminarEspecie(id);
@@ -188,10 +203,21 @@ export default function ClasificacionesPage() {
         await eliminarTaxonomia(id);
       }
       await cargarDatos();
+      setToast({
+        open: true,
+        message: `Registro "${nombre}" eliminado correctamente.`,
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar el registro.",
-      );
+      const mensaje =
+        err instanceof Error
+          ? err.message
+          : "No se pudo eliminar el registro.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
+    } finally {
+      setEliminando(false);
+      setConfirmarEliminar(null);
     }
   };
 
@@ -334,8 +360,8 @@ export default function ClasificacionesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
         {/* 1. Cabecera */}
         <div className="flex items-center justify-between shrink-0">
           <h1 className="text-2xl font-black text-slate-800 tracking-tight">
@@ -422,7 +448,7 @@ export default function ClasificacionesPage() {
         )}
 
         {/* 3. Tabla */}
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
+        <div className="anim-fade-up delay-2 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
           <div className="flex-1 overflow-y-auto">
             {cargando ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -477,7 +503,7 @@ export default function ClasificacionesPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => verDetalleEspecie(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.primary;
@@ -497,7 +523,7 @@ export default function ClasificacionesPage() {
                               onClick={() =>
                                 abrirModal("especie", "editar", item.id_especie)
                               }
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.secondary;
@@ -515,7 +541,7 @@ export default function ClasificacionesPage() {
 
                             <button
                               onClick={() => descargarFichaEspecie(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.dark;
@@ -533,13 +559,13 @@ export default function ClasificacionesPage() {
 
                             <button
                               onClick={() =>
-                                eliminar(
-                                  "especie",
-                                  item.id_especie,
-                                  item.nombre_comun,
-                                )
+                                setConfirmarEliminar({
+                                  tipo: "especie",
+                                  id: item.id_especie,
+                                  nombre: item.nombre_comun,
+                                })
                               }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs"
                               title="Eliminar registro"
                             >
                               <Trash2 size={15} />
@@ -565,7 +591,7 @@ export default function ClasificacionesPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => verDetalleTaxonomia(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.primary;
@@ -589,7 +615,7 @@ export default function ClasificacionesPage() {
                                   item.id_taxonomia,
                                 )
                               }
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.secondary;
@@ -607,7 +633,7 @@ export default function ClasificacionesPage() {
 
                             <button
                               onClick={() => descargarFichaTaxonomia(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.dark;
@@ -625,13 +651,13 @@ export default function ClasificacionesPage() {
 
                             <button
                               onClick={() =>
-                                eliminar(
-                                  "taxonomia",
-                                  item.id_taxonomia,
-                                  item.nombre_clase,
-                                )
+                                setConfirmarEliminar({
+                                  tipo: "taxonomia",
+                                  id: item.id_taxonomia,
+                                  nombre: item.nombre_clase,
+                                })
                               }
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs"
                               title="Eliminar registro"
                             >
                               <Trash2 size={15} />
@@ -661,7 +687,7 @@ export default function ClasificacionesPage() {
         </div>
 
         {/* 4. Paginación */}
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        <div className="anim-fade-up delay-3 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             mostrando {datosFiltrados > 0 ? startIndex + 1 : 0}-
             {Math.min(startIndex + itemsPerPage, datosFiltrados)} de{" "}
@@ -672,7 +698,7 @@ export default function ClasificacionesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronLeft size={16} />
             </button>
@@ -684,7 +710,7 @@ export default function ClasificacionesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronRight size={16} />
             </button>
@@ -770,7 +796,7 @@ export default function ClasificacionesPage() {
               <button
                 type="submit"
                 disabled={guardando}
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition hover:opacity-95 disabled:opacity-60"
+                className="anim-press w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition hover:opacity-95 disabled:opacity-60"
                 style={{ backgroundColor: palette.primary }}
               >
                 {guardando && <Loader2 size={14} className="animate-spin" />}
@@ -809,12 +835,37 @@ export default function ClasificacionesPage() {
 
         <button
           onClick={() => setDetalle(null)}
-          className="w-full py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition hover:opacity-95"
+          className="anim-press w-full py-2.5 rounded-xl text-white font-bold text-xs shadow-md transition hover:opacity-95"
           style={{ backgroundColor: palette.primary }}
         >
           Cerrar
         </button>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmarEliminar !== null}
+        title={
+          confirmarEliminar?.tipo === "taxonomia"
+            ? "Eliminar taxonomía"
+            : "Eliminar especie"
+        }
+        description={
+          confirmarEliminar
+            ? `¿Estás seguro de eliminar "${confirmarEliminar.nombre}"? Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Eliminar"
+        loading={eliminando}
+        onConfirm={eliminar}
+        onCancel={() => setConfirmarEliminar(null)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

@@ -57,26 +57,26 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed w-full flex justify-center z-30">
+    <header className="anim-fade-down fixed w-full flex justify-center z-30">
       {/* Contenedor pegado al TOP con bordes redondeados SOLO abajo */}
-      <nav className="relative bg-white px-8 py-3.5 rounded-b-3xl shadow-md flex items-center justify-between gap-8 md:gap-12 curve-corner-left curve-corner-right">
+      <nav className="anim-fade-down delay-1 relative bg-white px-8 py-3.5 rounded-b-3xl shadow-md flex items-center justify-between gap-8 md:gap-12 curve-corner-left curve-corner-right">
         {/* Lado Izquierdo: Inicio, Sobre Nosotros, Servicios */}
         <div className="flex items-center gap-6 text-xs md:text-sm font-semibold text-slate-700">
           <Link
             href="/"
-            className="hover:text-[var(--site-primary)] transition"
+            className="anim-press hover:-translate-y-0.5 hover:text-[var(--site-primary)] transition"
           >
             Inicio
           </Link>
           <Link
             href="/nosotros"
-            className="hover:text-[var(--site-primary)] transition"
+            className="anim-press hover:-translate-y-0.5 hover:text-[var(--site-primary)] transition"
           >
             Sobre Nosotros
           </Link>
           <Link
             href="/servicios"
-            className="hover:text-[var(--site-primary)] transition"
+            className="anim-press hover:-translate-y-0.5 hover:text-[var(--site-primary)] transition"
           >
             Servicios
           </Link>
@@ -102,13 +102,13 @@ export default function Navbar() {
         <div className="flex items-center gap-6 text-xs md:text-sm font-semibold text-slate-700">
           <Link
             href="/rescates"
-            className="hover:text-[var(--site-primary)] transition"
+            className="anim-press hover:-translate-y-0.5 hover:text-[var(--site-primary)] transition"
           >
             Rescates
           </Link>
           <Link
             href="/adopciones"
-            className="hover:text-[var(--site-primary)] transition"
+            className="anim-press hover:-translate-y-0.5 hover:text-[var(--site-primary)] transition"
           >
             Adopciones
           </Link>
@@ -129,7 +129,7 @@ export default function Navbar() {
               </button>
 
               {menuAbierto && (
-                <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50">
+                <div className="anim-scale-in absolute right-0 top-full mt-2 w-56 bg-white rounded-xl shadow-lg border border-slate-100 py-1.5 z-50">
                   <div className="px-4 py-2 border-b border-slate-100">
                     <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wide">
                       Sesión activa
@@ -167,7 +167,7 @@ export default function Navbar() {
           ) : (
             <Link
               href="/login"
-              className="px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition border-2 border-[var(--site-primary)] text-[var(--site-primary)] hover:bg-[var(--site-primary)] hover:text-white"
+              className="anim-press px-5 py-2 rounded-xl font-bold text-xs md:text-sm transition border-2 border-[var(--site-primary)] text-[var(--site-primary)] hover:-translate-y-0.5 hover:bg-[var(--site-primary)] hover:text-white"
             >
               Iniciar Sesión
             </Link>
@@ -176,7 +176,7 @@ export default function Navbar() {
           {/* Botón Donar destacado */}
           <Link
             href="/donar"
-            className="px-5 py-2 rounded-xl text-white font-bold text-xs md:text-sm transition shadow-sm hover:opacity-95"
+            className="anim-press px-5 py-2 rounded-xl text-white font-bold text-xs md:text-sm transition shadow-sm hover:-translate-y-0.5 hover:opacity-95 hover:shadow-lg"
             style={{
               background: `linear-gradient(135deg, ${sitePalette.primary} 0%, ${sitePalette.accent} 100%)`,
             }}

@@ -2,8 +2,10 @@ import { prisma } from "@/src/lib/prisma";
 import { ErrorServicio, mapearErrorPrisma } from "@/src/services/common/errors";
 import type {
   AdopcionInput,
+  AdopcionParcial,
   EvaluacionSolicitudInput,
   SeguimientoInput,
+  SeguimientoProgramacionParcial,
   SeguimientoResultadoInput,
   SolicitanteInput,
   SolicitudInput,
@@ -37,6 +39,17 @@ const RELACIONES_SOLICITUD = {
     select: { id_animal: true, nombre: true, codigo_identificador: true },
   },
   evaluador: { select: { id_usuario: true, nombre: true, apellido: true } },
+} as const;
+
+const RELACIONES_ADOPCION = {
+  solicitud: { include: RELACIONES_SOLICITUD },
+  encargado: { select: { id_usuario: true, nombre: true, apellido: true } },
+  _count: { select: { seguimientos_post_adopcion: true } },
+} as const;
+
+const RELACIONES_SEGUIMIENTO = {
+  adopcion: { include: RELACIONES_ADOPCION },
+  realizador: { select: { id_usuario: true, nombre: true, apellido: true } },
 } as const;
 
 export async function listarSolicitantes() {
@@ -240,20 +253,30 @@ export async function evaluarSolicitud(
   }
 }
 
+export async function listarSolicitudesAprobadasDisponibles() {
+  return prisma.solicitudAdopcion.findMany({
+    where: { estado: "Aprobada", adopcion: null },
+    orderBy: { fecha_solicitud: "desc" },
+    include: RELACIONES_SOLICITUD,
+  });
+}
+
 export async function listarAdopciones() {
   return prisma.adopcion.findMany({
     orderBy: { fecha_adopcion: "desc" },
-    include: {
-      solicitud: {
-        include: {
-          solicitante: true,
-          animal: { select: { id_animal: true, nombre: true } },
-        },
-      },
-      encargado: { select: { id_usuario: true, nombre: true, apellido: true } },
-      _count: { select: { seguimientos_post_adopcion: true } },
-    },
+    include: RELACIONES_ADOPCION,
   });
+}
+
+export async function obtenerAdopcion(id: string) {
+  const adopcion = await prisma.adopcion.findUnique({
+    where: { id_adopcion: id },
+    include: RELACIONES_ADOPCION,
+  });
+  if (!adopcion) {
+    throw new ErrorServicio(404, "Adopción no encontrada.");
+  }
+  return adopcion;
 }
 
 export async function crearAdopcion(input: AdopcionInput, encargadoId: string) {
@@ -299,11 +322,90 @@ export async function crearAdopcion(input: AdopcionInput, encargadoId: string) {
   }
 }
 
-export async function listarSeguimientos(idAdopcion: string) {
+export async function actualizarAdopcion(id: string, input: AdopcionParcial) {
+  try {
+    return await prisma.adopcion.update({
+      where: { id_adopcion: id },
+      data: {
+        ...(input.fecha_adopcion
+          ? { fecha_adopcion: new Date(input.fecha_adopcion) }
+          : {}),
+        ...("contrato_firmado_url" in input
+          ? { contrato_firmado_url: input.contrato_firmado_url }
+          : {}),
+      },
+      include: RELACIONES_ADOPCION,
+    });
+  } catch (error) {
+    console.error("Error al actualizar adopción:", error);
+    throw mapearErrorPrisma(error, MAPA_ADOPCION, {
+      status: 500,
+      mensaje: "No se pudo actualizar la adopción.",
+    });
+  }
+}
+
+export async function eliminarAdopcion(id: string) {
+  const adopcion = await prisma.adopcion.findUnique({
+    where: { id_adopcion: id },
+    select: { solicitud: { select: { id_animal: true } } },
+  });
+  if (!adopcion) {
+    throw new ErrorServicio(404, "Adopción no encontrada.");
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.adopcion.delete({ where: { id_adopcion: id } });
+      await tx.animal.update({
+        where: { id_animal: adopcion.solicitud.id_animal },
+        data: { estado: "Disponible_Adopcion" },
+      });
+    });
+  } catch (error) {
+    console.error("Error al eliminar adopción:", error);
+    throw mapearErrorPrisma(
+      error,
+      {
+        ...MAPA_ADOPCION,
+        P2003: {
+          status: 409,
+          mensaje:
+            "No se puede eliminar la adopción porque tiene seguimientos registrados.",
+        },
+      },
+      {
+        status: 500,
+        mensaje: "No se pudo eliminar la adopción.",
+      },
+    );
+  }
+}
+
+export async function listarSeguimientos() {
+  return prisma.seguimientoPostAdopcion.findMany({
+    orderBy: [{ fecha_programada: "desc" }, { num_mes: "desc" }],
+    include: RELACIONES_SEGUIMIENTO,
+  });
+}
+
+export async function listarSeguimientosPorAdopcion(idAdopcion: string) {
   return prisma.seguimientoPostAdopcion.findMany({
     where: { id_adopcion: idAdopcion },
     orderBy: { num_mes: "asc" },
+    include: RELACIONES_SEGUIMIENTO,
   });
+}
+
+export async function obtenerSeguimiento(id: string) {
+  const seguimiento = await prisma.seguimientoPostAdopcion.findUnique({
+    where: { id_seguimiento: id },
+    include: RELACIONES_SEGUIMIENTO,
+  });
+  if (!seguimiento) {
+    throw new ErrorServicio(404, "Seguimiento no encontrado.");
+  }
+  return seguimiento;
 }
 
 export async function crearSeguimiento(input: SeguimientoInput) {
@@ -314,12 +416,37 @@ export async function crearSeguimiento(input: SeguimientoInput) {
         num_mes: input.num_mes,
         fecha_programada: new Date(input.fecha_programada),
       },
+      include: RELACIONES_SEGUIMIENTO,
     });
   } catch (error) {
     console.error("Error al crear seguimiento:", error);
     throw mapearErrorPrisma(error, MAPA_SEGUIMIENTO, {
       status: 500,
       mensaje: "No se pudo programar el seguimiento.",
+    });
+  }
+}
+
+export async function actualizarProgramacionSeguimiento(
+  id: string,
+  input: SeguimientoProgramacionParcial,
+) {
+  try {
+    return await prisma.seguimientoPostAdopcion.update({
+      where: { id_seguimiento: id },
+      data: {
+        ...(input.num_mes !== undefined ? { num_mes: input.num_mes } : {}),
+        ...(input.fecha_programada
+          ? { fecha_programada: new Date(input.fecha_programada) }
+          : {}),
+      },
+      include: RELACIONES_SEGUIMIENTO,
+    });
+  } catch (error) {
+    console.error("Error al actualizar programación de seguimiento:", error);
+    throw mapearErrorPrisma(error, MAPA_SEGUIMIENTO, {
+      status: 500,
+      mensaje: "No se pudo actualizar la programación del seguimiento.",
     });
   }
 }
@@ -339,12 +466,27 @@ export async function registrarResultadoSeguimiento(
         evidencias_fotos: input.evidencias_fotos ?? [],
         realizado_por: realizadoPor,
       },
+      include: RELACIONES_SEGUIMIENTO,
     });
   } catch (error) {
     console.error("Error al registrar resultado de seguimiento:", error);
     throw mapearErrorPrisma(error, MAPA_SEGUIMIENTO, {
       status: 500,
       mensaje: "No se pudo registrar el seguimiento.",
+    });
+  }
+}
+
+export async function eliminarSeguimiento(id: string) {
+  try {
+    await prisma.seguimientoPostAdopcion.delete({
+      where: { id_seguimiento: id },
+    });
+  } catch (error) {
+    console.error("Error al eliminar seguimiento:", error);
+    throw mapearErrorPrisma(error, MAPA_SEGUIMIENTO, {
+      status: 500,
+      mensaje: "No se pudo eliminar el seguimiento.",
     });
   }
 }

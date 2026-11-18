@@ -4,6 +4,7 @@ import {
   SiteThemeProvider,
   ThemeProvider,
 } from "@/src/context/ThemeContext";
+import { ToastProvider } from "@/src/context/ToastContext";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,7 +31,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <SiteThemeProvider>{children}</SiteThemeProvider>
+          <SiteThemeProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </SiteThemeProvider>
         </ThemeProvider>
       </body>
     </html>

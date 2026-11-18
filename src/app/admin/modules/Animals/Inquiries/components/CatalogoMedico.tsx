@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/src/components/ui/Button";
 import { Modal } from "@/src/components/ui/Modal";
 import { SearchInput } from "@/src/components/ui/Filters";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import {
   obtenerCatalogos,
   crearCatalogo,
@@ -56,6 +58,13 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [itemEnEdicion, setItemEnEdicion] = useState<ItemCatalogo | null>(null);
   const [guardando, setGuardando] = useState(false);
+  const [itemAEliminar, setItemAEliminar] = useState<ItemCatalogo | null>(null);
+  const [desactivando, setDesactivando] = useState(false);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    type: ToastTipo;
+  }>({ open: false, message: "", type: "success" });
 
   const [nombre, setNombre] = useState("");
   const [descripcion, setDescripcion] = useState("");
@@ -157,7 +166,9 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
 
   const handleGuardar = async () => {
     if (!nombre.trim()) {
-      setError("El nombre es obligatorio.");
+      const mensaje = "El nombre es obligatorio.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
       return;
     }
 
@@ -182,6 +193,13 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
       datos.requiere_aislamiento = requiereAislamiento;
     }
 
+    const etiqueta =
+      subTab === "vacuna"
+        ? "Vacuna"
+        : subTab === "medicamento"
+          ? "Medicamento"
+          : "Enfermedad";
+
     try {
       if (itemEnEdicion) {
         const id = idDeItem(itemEnEdicion);
@@ -193,28 +211,47 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
       setModalAbierto(false);
       await cargar();
       onActualizado?.();
+      setToast({
+        open: true,
+        message: itemEnEdicion
+          ? `${etiqueta} actualizada correctamente.`
+          : `${etiqueta} registrada correctamente.`,
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo guardar el elemento.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo guardar el elemento.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setGuardando(false);
     }
   };
 
-  const handleEliminar = async (item: ItemCatalogo) => {
+  const handleEliminar = async () => {
+    if (!itemAEliminar) return;
+    const item = itemAEliminar;
     const id = idDeItem(item);
     if (!id) return;
-    if (!window.confirm(`¿Desactivar "${item.nombre}" del catálogo?`)) return;
     setError(null);
+    setDesactivando(true);
     try {
       await eliminarCatalogo(subTab, id);
       await cargar();
       onActualizado?.();
+      setToast({
+        open: true,
+        message: `"${item.nombre}" desactivado correctamente.`,
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar el elemento.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo desactivar el elemento.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
+    } finally {
+      setDesactivando(false);
+      setItemAEliminar(null);
     }
   };
 
@@ -226,9 +263,9 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
     : `Nueva ${subTab === "vacuna" ? "vacuna" : subTab === "medicamento" ? "medicamento" : "enfermedad"}`;
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
+    <div className="anim-fade-in space-y-4">
+      <div className="anim-fade-up delay-1 flex flex-wrap items-center justify-between gap-3">
+        <div className="anim-scale-in flex items-center gap-1 p-1 bg-slate-100 rounded-xl">
           {SUBTABS.map((tab) => (
             <button
               key={tab.valor}
@@ -236,7 +273,7 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
                 setSubTab(tab.valor);
                 setSearchTerm("");
               }}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${
+              className={`anim-press px-3 py-1.5 rounded-lg text-[11px] font-bold transition ${
                 subTab === tab.valor
                   ? "bg-white text-slate-800 shadow-xs"
                   : "text-slate-500 hover:text-slate-700"
@@ -262,7 +299,7 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
+        <div className="anim-fade-up flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
           <AlertTriangle size={13} />
           {error}
         </div>
@@ -278,7 +315,7 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
           No hay elementos registrados en este catálogo.
         </div>
       ) : (
-        <div className="border border-slate-200 rounded-xl overflow-hidden">
+        <div className="anim-fade-up delay-2 border border-slate-200 rounded-xl overflow-hidden">
           <table className="w-full text-left text-[11px]">
             <thead className="bg-slate-50 text-slate-500 uppercase tracking-wider text-[9px] font-bold">
               {subTab === "vacuna" ? (
@@ -374,16 +411,16 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
 
                   <td className="px-3 py-2">
                     <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => abrirEdicion(item)}
-                        className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-                        title="Editar"
-                      >
+                        <button
+                          onClick={() => abrirEdicion(item)}
+                          className="anim-press p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                          title="Editar"
+                        >
                         <Edit size={13} />
                       </button>
                       <button
-                        onClick={() => handleEliminar(item)}
-                        className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                        onClick={() => setItemAEliminar(item)}
+                        className="anim-press p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                         title="Desactivar"
                       >
                         <Trash2 size={13} />
@@ -403,9 +440,9 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
         title={tituloModal}
         size="lg"
       >
-        <div className="space-y-3">
+        <div className="anim-fade-in space-y-3">
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
+            <div className="anim-fade-up flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
               <AlertTriangle size={13} />
               {error}
             </div>
@@ -586,6 +623,28 @@ export default function CatalogoMedico({ onActualizado }: CatalogoMedicoProps) {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={itemAEliminar !== null}
+        title="Desactivar del catálogo"
+        description={
+          itemAEliminar
+            ? `¿Estás seguro de desactivar "${itemAEliminar.nombre}" del catálogo? Dejará de estar disponible para nuevas consultas.`
+            : ""
+        }
+        confirmLabel="Desactivar"
+        pendingLabel="Desactivando..."
+        loading={desactivando}
+        onConfirm={handleEliminar}
+        onCancel={() => setItemAEliminar(null)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

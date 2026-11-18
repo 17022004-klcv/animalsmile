@@ -6,6 +6,7 @@ import React, {
   useContext,
   useEffect,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 export interface Palette {
@@ -37,13 +38,32 @@ export const defaultSitePalette: Palette = {
 
 const THEME_STORAGE_KEY = "animalsmile_theme";
 const SITE_THEME_STORAGE_KEY = "animalsmile_site_theme";
+const THEME_CHANGE_EVENT = "animalsmile_theme_change";
+const SITE_THEME_CHANGE_EVENT = "animalsmile_site_theme_change";
+
+// Variables de caché en memoria para mantener referencias estables
+let cachedThemeRaw: string | null = null;
+let cachedThemePalette: Palette = defaultPalette;
+
+let cachedSiteThemeRaw: string | null = null;
+let cachedSiteThemePalette: Palette = defaultSitePalette;
 
 function cargarPaletaGuardada(): Palette {
   if (typeof window === "undefined") return defaultPalette;
-  const guardada = localStorage.getItem(THEME_STORAGE_KEY);
-  if (!guardada) return defaultPalette;
   try {
-    return JSON.parse(guardada) as Palette;
+    const guardada = localStorage.getItem(THEME_STORAGE_KEY);
+    if (!guardada) {
+      cachedThemeRaw = null;
+      cachedThemePalette = defaultPalette;
+      return defaultPalette;
+    }
+    // Si el JSON en localStorage no ha cambiado, devolvemos la misma referencia
+    if (guardada === cachedThemeRaw) {
+      return cachedThemePalette;
+    }
+    cachedThemeRaw = guardada;
+    cachedThemePalette = JSON.parse(guardada) as Palette;
+    return cachedThemePalette;
   } catch {
     return defaultPalette;
   }
@@ -51,12 +71,56 @@ function cargarPaletaGuardada(): Palette {
 
 function cargarPaletaSitioGuardada(): Palette {
   if (typeof window === "undefined") return defaultSitePalette;
-  const guardada = localStorage.getItem(SITE_THEME_STORAGE_KEY);
-  if (!guardada) return defaultSitePalette;
   try {
-    return JSON.parse(guardada) as Palette;
+    const guardada = localStorage.getItem(SITE_THEME_STORAGE_KEY);
+    if (!guardada) {
+      cachedSiteThemeRaw = null;
+      cachedSiteThemePalette = defaultSitePalette;
+      return defaultSitePalette;
+    }
+    // Si el JSON en localStorage no ha cambiado, devolvemos la misma referencia
+    if (guardada === cachedSiteThemeRaw) {
+      return cachedSiteThemePalette;
+    }
+    cachedSiteThemeRaw = guardada;
+    cachedSiteThemePalette = JSON.parse(guardada) as Palette;
+    return cachedSiteThemePalette;
   } catch {
     return defaultSitePalette;
+  }
+}
+
+function suscribirPaleta(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(THEME_CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function suscribirPaletaSitio(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
+  window.addEventListener(SITE_THEME_CHANGE_EVENT, callback);
+  window.addEventListener("storage", callback);
+  return () => {
+    window.removeEventListener(SITE_THEME_CHANGE_EVENT, callback);
+    window.removeEventListener("storage", callback);
+  };
+}
+
+function paletaServidor(): Palette {
+  return defaultPalette;
+}
+
+function paletaSitioServidor(): Palette {
+  return defaultSitePalette;
+}
+
+function notificarCambio(nombre: string) {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(nombre));
   }
 }
 
@@ -69,7 +133,11 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [palette, setPalette] = useState<Palette>(cargarPaletaGuardada);
+  const palette = useSyncExternalStore(
+    suscribirPaleta,
+    cargarPaletaGuardada,
+    paletaServidor,
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -80,14 +148,18 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty("--color-muted", palette.muted);
   }, [palette]);
 
-  const updatePalette = (newPalette: Palette) => {
-    setPalette(newPalette);
-    localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newPalette));
-  };
+  const updatePalette = useCallback((newPalette: Palette) => {
+    try {
+      localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(newPalette));
+    } catch {
+      console.error("No se pudo guardar la paleta personalizada.");
+    }
+    notificarCambio(THEME_CHANGE_EVENT);
+  }, []);
 
-  const resetDefaultPalette = () => {
+  const resetDefaultPalette = useCallback(() => {
     updatePalette(defaultPalette);
-  };
+  }, [updatePalette]);
 
   return (
     <ThemeContext.Provider
@@ -119,8 +191,10 @@ const SiteThemeContext = createContext<SiteThemeContextType | undefined>(
 );
 
 export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
-  const [sitePalette, setSitePalette] = useState<Palette>(
+  const sitePalette = useSyncExternalStore(
+    suscribirPaletaSitio,
     cargarPaletaSitioGuardada,
+    paletaSitioServidor,
   );
   const [sitioConfig, setSitioConfig] = useState<Record<string, string>>({});
 
@@ -134,8 +208,12 @@ export function SiteThemeProvider({ children }: { children: React.ReactNode }) {
   }, [sitePalette]);
 
   const actualizarPaletaSitio = useCallback((newPalette: Palette) => {
-    setSitePalette(newPalette);
-    localStorage.setItem(SITE_THEME_STORAGE_KEY, JSON.stringify(newPalette));
+    try {
+      localStorage.setItem(SITE_THEME_STORAGE_KEY, JSON.stringify(newPalette));
+    } catch {
+      console.error("No se pudo guardar la paleta del sitio.");
+    }
+    notificarCambio(SITE_THEME_CHANGE_EVENT);
   }, []);
 
   const restablecerPaletaSitio = useCallback(() => {

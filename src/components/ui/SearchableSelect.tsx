@@ -81,7 +81,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
 
   return (
     <div
-      className="flex flex-col gap-1.5 w-full text-xs font-medium"
+      className="anim-fade-in flex flex-col gap-1.5 w-full text-xs font-medium"
       ref={containerRef}
     >
       {/* Label opcional */}
@@ -97,7 +97,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
           type="button"
           onClick={() => !disabled && setIsOpen(!isOpen)}
           disabled={disabled}
-          className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border transition-all text-left bg-white shadow-2xs ${
+          className={`anim-press w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border transition-all text-left bg-white shadow-2xs ${
             error
               ? "border-red-300 text-red-700 bg-red-50/30"
               : isOpen
@@ -132,7 +132,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         {isOpen && (
           <div
             id={listboxId}
-            className="absolute z-50 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col animate-in fade-in-50 zoom-in-95 duration-100"
+            className="anim-scale-in absolute z-50 mt-1.5 w-full bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden flex flex-col"
           >
             {/* Buscador Superior */}
             <div className="p-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
@@ -149,7 +149,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                 <button
                   type="button"
                   onClick={() => setSearchQuery("")}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition"
+                  className="anim-press p-1 rounded-md text-slate-400 hover:text-slate-600 hover:bg-slate-200/50 transition"
                 >
                   <X size={13} />
                 </button>
@@ -166,7 +166,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                       <button
                         type="button"
                         onClick={() => handleSelect(opt.value)}
-                        className={`w-full text-left px-3.5 py-2 flex items-center justify-between gap-2 transition-colors ${
+                        className={`anim-press w-full text-left px-3.5 py-2 flex items-center justify-between gap-2 transition-colors ${
                           isSelected
                             ? "bg-slate-50 font-bold text-slate-900"
                             : "hover:bg-slate-50/80 text-slate-700"

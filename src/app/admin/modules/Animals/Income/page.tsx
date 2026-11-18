@@ -6,6 +6,8 @@ import { useTheme } from "@/src/context/ThemeContext";
 import { Button } from "@/src/components/ui/Button";
 import { SearchInput } from "@/src/components/ui/Filters";
 import { Modal } from "@/src/components/ui/Modal";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import { formatearEstado, fechaCorta } from "@/src/services/animals/animal-format";
 import { obtenerAnimales, eliminarAnimal } from "@/src/services/animals/animal-client";
 import type { AnimalConRelaciones } from "@/src/types/animal";
@@ -31,6 +33,13 @@ export default function IngresosAnimalesPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [confirmarEliminar, setConfirmarEliminar] =
+    useState<AnimalConRelaciones | null>(null);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    type: ToastTipo;
+  }>({ open: false, message: "", type: "success" });
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
@@ -100,26 +109,28 @@ export default function IngresosAnimalesPage() {
     setModalOpen(true);
   };
 
-  const handleEliminar = async (animal: AnimalConRelaciones) => {
-    if (
-      !window.confirm(
-        `¿Seguro que quieres eliminar a "${animal.nombre}" (${animal.codigo_identificador})? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
+  const handleEliminar = async () => {
+    if (!confirmarEliminar) return;
+    const animal = confirmarEliminar;
 
     setEliminandoId(animal.id_animal);
     setError(null);
     try {
       await eliminarAnimal(animal.id_animal);
       await cargarAnimales();
+      setToast({
+        open: true,
+        message: `Animal "${animal.nombre}" eliminado correctamente.`,
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar el animal.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo eliminar el animal.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setEliminandoId(null);
+      setConfirmarEliminar(null);
     }
   };
 
@@ -205,9 +216,9 @@ export default function IngresosAnimalesPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
       {/* Marco Principal */}
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
         {/* Cabecera */}
         <div className="flex items-center justify-between shrink-0">
           <div>
@@ -233,7 +244,7 @@ export default function IngresosAnimalesPage() {
         </div>
 
         {/* Filtros */}
-        <div className="flex items-center gap-3 my-4 shrink-0">
+        <div className="anim-fade-up delay-2 flex items-center gap-3 my-4 shrink-0">
           <SearchInput
             value={searchTerm}
             onChange={(e) => {
@@ -253,7 +264,7 @@ export default function IngresosAnimalesPage() {
         )}
 
         {/* Tabla con scroll interno */}
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
+        <div className="anim-fade-up delay-3 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
           <div className="flex-1 overflow-y-auto">
             {cargando ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
@@ -296,7 +307,7 @@ export default function IngresosAnimalesPage() {
                             <PawPrint size={15} />
                           </span>
                         )}
-                        <span className="font-mono font-bold text-slate-700">
+                        <span className="font-semibold tracking-wide text-slate-700">
                           {item.codigo_identificador}
                         </span>
                       </td>
@@ -348,7 +359,7 @@ export default function IngresosAnimalesPage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleVerDetalle(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.primary;
@@ -366,7 +377,7 @@ export default function IngresosAnimalesPage() {
 
                           <Link
                             href={`/admin/modules/Animals/Income/Form?id=${item.id_animal}`}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.secondary;
@@ -384,7 +395,7 @@ export default function IngresosAnimalesPage() {
 
                           <button
                             onClick={() => descargarFicha(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.dark;
@@ -401,9 +412,9 @@ export default function IngresosAnimalesPage() {
                           </button>
 
                           <button
-                            onClick={() => handleEliminar(item)}
+                            onClick={() => setConfirmarEliminar(item)}
                             disabled={eliminandoId === item.id_animal}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                             title="Eliminar registro"
                           >
                             {eliminandoId === item.id_animal ? (
@@ -434,7 +445,7 @@ export default function IngresosAnimalesPage() {
         </div>
 
         {/* Paginación */}
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        <div className="anim-fade-up delay-4 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             mostrando {filteredData.length > 0 ? startIndex + 1 : 0}-
             {Math.min(startIndex + itemsPerPage, filteredData.length)} de{" "}
@@ -445,7 +456,7 @@ export default function IngresosAnimalesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronLeft size={16} />
             </button>
@@ -457,7 +468,7 @@ export default function IngresosAnimalesPage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronRight size={16} />
             </button>
@@ -579,7 +590,7 @@ export default function IngresosAnimalesPage() {
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
+                className="anim-press px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
                 style={{ backgroundColor: palette.primary }}
               >
                 Cerrar
@@ -588,6 +599,30 @@ export default function IngresosAnimalesPage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={confirmarEliminar !== null}
+        title="Eliminar animal"
+        description={
+          confirmarEliminar
+            ? `¿Estás seguro de eliminar a "${confirmarEliminar.nombre}" (${confirmarEliminar.codigo_identificador})? Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Eliminar"
+        loading={
+          eliminandoId !== null &&
+          eliminandoId === confirmarEliminar?.id_animal
+        }
+        onConfirm={handleEliminar}
+        onCancel={() => setConfirmarEliminar(null)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

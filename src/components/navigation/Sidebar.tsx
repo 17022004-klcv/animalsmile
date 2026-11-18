@@ -8,6 +8,7 @@ import {
   PawPrint,
   Heart,
   Home,
+  LayoutDashboard,
   DollarSign,
   Users,
   Shield,
@@ -196,13 +197,23 @@ const menuSections: MenuSection[] = [
   },
 ];
 
+function seccionDeRuta(pathname: string): string | null {
+  const seccion = menuSections.find((section) =>
+    section.items.some(
+      (item) =>
+        pathname === item.href || pathname.startsWith(`${item.href}/`),
+    ),
+  );
+  return seccion?.title ?? null;
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { palette } = useTheme();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
-    "Gestión de Animales": true,
-  });
+  const [seccionAbierta, setSeccionAbierta] = useState<string | null>(() =>
+    seccionDeRuta(pathname),
+  );
   const [searchTerm, setSearchTerm] = useState("");
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [perfil, setPerfil] = useState<{
@@ -244,8 +255,10 @@ export default function Sidebar() {
     if (isCollapsed) {
       setIsCollapsed(false);
     }
-    setOpenSections((prev) => ({ ...prev, [title]: !prev[title] }));
+    setSeccionAbierta((prev) => (prev === title ? null : title));
   };
+
+  const esInicio = pathname === "/admin";
 
   const filteredSections = menuSections
     .map((section) => ({
@@ -265,7 +278,7 @@ export default function Sidebar() {
       {/* Botón flotante para dispositivos móviles */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl text-white shadow-lg focus:outline-none"
+        className="anim-press lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-xl text-white shadow-lg focus:outline-none"
         style={{ backgroundColor: palette.dark }}
         aria-label="Abrir menú"
       >
@@ -311,7 +324,7 @@ export default function Sidebar() {
             {/* Ícono de colapsar al lado del texto */}
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition shrink-0 hidden lg:flex items-center justify-center"
+              className="anim-press p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition shrink-0 hidden lg:flex items-center justify-center"
               title={isCollapsed ? "Expandir menú" : "Colapsar menú"}
             >
               {isCollapsed ? (
@@ -341,18 +354,49 @@ export default function Sidebar() {
         </div>
 
         {/* Lista de Navegación */}
-        <nav className="flex-1 overflow-y-auto px-3 py-1 space-y-1">
-          {filteredSections.map((section) => {
+        <nav className="anim-fade-up flex-1 overflow-y-auto px-3 py-1 space-y-1">
+          <Link
+            href="/admin"
+            onClick={() => {
+              setIsMobileOpen(false);
+              setSeccionAbierta(null);
+            }}
+            title={isCollapsed ? "Inicio" : undefined}
+            className={`anim-fade-up delay-1 group flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition mb-1 ${
+              isCollapsed ? "justify-center px-0" : ""
+            } ${esInicio ? "" : "text-slate-600 hover:bg-slate-50"}`}
+            style={
+              esInicio
+                ? {
+                    backgroundColor: conAlpha(palette.primary, 0.08),
+                    color: palette.primary,
+                  }
+                : undefined
+            }
+          >
+            <LayoutDashboard
+              size={18}
+              className="shrink-0 transition-colors group-hover:scale-110"
+              style={{ color: esInicio ? palette.primary : palette.secondary }}
+            />
+            {!isCollapsed && <span className="truncate">Inicio</span>}
+          </Link>
+
+          {filteredSections.map((section, index) => {
             const SectionIcon = section.icon;
-            const isOpen = openSections[section.title] || searchTerm.length > 0;
+            const isOpen =
+              seccionAbierta === section.title || searchTerm.length > 0;
 
             return (
-              <div key={section.title} className="mb-1">
+              <div
+                key={section.title}
+                className={`anim-fade-up delay-${Math.min(index + 2, 6)} mb-1`}
+              >
                 {/* Botón Acordeón de Sección */}
                 <button
                   onClick={() => toggleSection(section.title)}
                   title={isCollapsed ? section.title : undefined}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition group ${
+                  className={`anim-press w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-50 transition group ${
                     isCollapsed ? "justify-center px-0" : ""
                   }`}
                 >
@@ -382,7 +426,7 @@ export default function Sidebar() {
 
                 {/* Subopciones desplegables */}
                 {!isCollapsed && isOpen && (
-                  <div className="ml-5 my-1 pl-2 border-l-2 border-slate-100 space-y-1">
+                  <div className="anim-scale-in delay-1 ml-5 my-1 pl-2 border-l-2 border-slate-100 space-y-1">
                     {section.items.map((item) => {
                       const SubIcon = item.icon;
                       const isActive = pathname === item.href;
@@ -392,7 +436,7 @@ export default function Sidebar() {
                           key={item.href}
                           href={item.href}
                           onClick={() => setIsMobileOpen(false)}
-                          className={`group/item flex items-center gap-2 px-3 py-2 rounded-md text-xs font-bold transition-all ${
+                          className={`anim-fade-up delay-2 group/item flex items-center gap-2 px-3 py-2 rounded-md text-xs font-bold transition-all ${
                             isActive
                               ? "font-semibold border-l-2"
                               : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
@@ -433,7 +477,7 @@ export default function Sidebar() {
         {/* Footer / Perfil de Usuario */}
         <div className="p-3 border-t border-slate-100 bg-slate-50/50">
           <div
-            className={`flex items-center rounded-lg bg-white border border-slate-100 shadow-sm p-2 ${
+            className={`anim-fade-up delay-6 flex items-center rounded-lg bg-white border border-slate-100 shadow-sm p-2 ${
               isCollapsed ? "justify-center" : "justify-between"
             }`}
           >
@@ -461,7 +505,7 @@ export default function Sidebar() {
             </Link>
             {!isCollapsed && (
               <button
-                className="p-1.5 text-slate-400 hover:bg-slate-50 rounded-md transition shrink-0"
+                className="anim-press p-1.5 text-slate-400 hover:bg-slate-50 rounded-md transition shrink-0"
                 style={{ color: palette.accent }}
                 title="Cerrar sesión"
                 onClick={async () => {

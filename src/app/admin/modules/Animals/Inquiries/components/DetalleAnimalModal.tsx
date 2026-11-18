@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import { Button } from "@/src/components/ui/Button";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import { useTheme } from "@/src/context/ThemeContext";
 import {
   obtenerAnimalConConsultas,
@@ -56,6 +58,13 @@ export default function DetalleAnimalModal({
     useState<ConsultaConRelaciones | null>(null);
   const [mostrarFormulario, setMostrarFormulario] = useState(true);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [consultaAEliminar, setConsultaAEliminar] =
+    useState<ConsultaConRelaciones | null>(null);
+  const [toast, setToast] = useState<{
+    open: boolean;
+    message: string;
+    type: ToastTipo;
+  }>({ open: false, message: "", type: "success" });
 
   const cargar = useCallback(async () => {
     if (!idAnimal) return;
@@ -98,25 +107,34 @@ export default function DetalleAnimalModal({
     onActualizado();
   };
 
-  const handleEliminar = async (idConsulta: string) => {
-    if (!window.confirm("¿Eliminar esta consulta del expediente?")) return;
+  const handleEliminar = async () => {
+    if (!consultaAEliminar) return;
+    const idConsulta = consultaAEliminar.id_consulta;
     setEliminandoId(idConsulta);
     setError(null);
     try {
       await eliminarConsulta(idConsulta);
       await cargar();
       onActualizado();
+      setToast({
+        open: true,
+        message: "Consulta eliminada del expediente correctamente.",
+        type: "success",
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar la consulta.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo eliminar la consulta.";
+      setError(mensaje);
+      setToast({ open: true, message: mensaje, type: "error" });
     } finally {
       setEliminandoId(null);
+      setConsultaAEliminar(null);
     }
   };
 
   return (
-    <Modal
+    <>
+      <Modal
       open={Boolean(idAnimal)}
       onClose={onClose}
       size="xl"
@@ -137,22 +155,24 @@ export default function DetalleAnimalModal({
           No se encontró información del animal.
         </p>
       ) : (
-        <div className="space-y-4 text-xs text-slate-600 max-h-[75vh] overflow-y-auto pr-1">
+        <div className="anim-fade-in space-y-4 text-xs text-slate-600 max-h-[75vh] overflow-y-auto pr-1">
           {error && (
-            <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
+            <div className="anim-fade-up flex items-center gap-2 px-3 py-2 rounded-xl bg-red-50 border border-red-200 text-red-600 text-[11px] font-semibold">
               <AlertTriangle size={13} />
               {error}
             </div>
           )}
 
           {/* Encabezado del animal */}
-          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
+          <div className="anim-fade-up delay-1 flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100">
             {detalle.foto_principal ? (
-              <img
-                src={detalle.foto_principal}
-                alt={detalle.nombre}
-                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-xs"
-              />
+              <div className="anim-zoom-img w-12 h-12 rounded-full border-2 border-white shadow-xs shrink-0">
+                <img
+                  src={detalle.foto_principal}
+                  alt={detalle.nombre}
+                  className="w-full h-full object-cover"
+                />
+              </div>
             ) : (
               <span className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-100 border-2 border-white shadow-xs text-slate-400">
                 <PawPrint size={20} />
@@ -180,7 +200,7 @@ export default function DetalleAnimalModal({
           </div>
 
           {/* Plan de vacunas */}
-          <div className="space-y-2">
+          <div className="anim-fade-up delay-2 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                 <Syringe size={12} /> Plan de vacunas
@@ -248,7 +268,7 @@ export default function DetalleAnimalModal({
           </div>
 
           {/* Historial de consultas */}
-          <div className="space-y-2">
+          <div className="anim-fade-up delay-3 space-y-2">
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
               <CalendarClock size={12} /> Consultas registradas (
               {detalle.consultas.length})
@@ -263,7 +283,7 @@ export default function DetalleAnimalModal({
                 {detalle.consultas.map((consulta) => (
                   <div
                     key={consulta.id_consulta}
-                    className="p-3 bg-white rounded-xl border border-slate-200 space-y-1.5"
+                    className="anim-fade-up p-3 bg-white rounded-xl border border-slate-200 space-y-1.5"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
@@ -285,14 +305,14 @@ export default function DetalleAnimalModal({
                             setConsultaEnEdicion(consulta);
                             setMostrarFormulario(true);
                           }}
-                          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                          className="anim-press p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
                           title="Editar consulta"
                         >
                           <Edit size={13} />
                         </button>
                         <button
-                          onClick={() => handleEliminar(consulta.id_consulta)}
-                          className="p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
+                          onClick={() => setConsultaAEliminar(consulta)}
+                          className="anim-press p-1 rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition"
                           title="Eliminar consulta"
                         >
                           {eliminandoId === consulta.id_consulta ? (
@@ -373,7 +393,7 @@ export default function DetalleAnimalModal({
 
           {/* Formulario de consulta */}
           {catalogos && (
-            <div className="space-y-2">
+            <div className="anim-fade-up delay-4 space-y-2">
               <div className="flex items-center justify-between">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
                   <Plus size={12} />
@@ -412,5 +432,23 @@ export default function DetalleAnimalModal({
         </div>
       )}
     </Modal>
+
+      <ConfirmDialog
+        open={consultaAEliminar !== null}
+        title="Eliminar consulta"
+        description="¿Estás seguro de eliminar esta consulta del expediente? Esta acción no se puede deshacer."
+        confirmLabel="Eliminar"
+        loading={eliminandoId !== null}
+        onConfirm={handleEliminar}
+        onCancel={() => setConsultaAEliminar(null)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, open: false }))}
+      />
+    </>
   );
 }

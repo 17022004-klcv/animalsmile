@@ -43,3 +43,15 @@ export async function actualizarUsuario(
 export async function eliminarUsuario(id: string): Promise<void> {
   await pedir(`${BASE}/${id}`, { method: "DELETE" });
 }
+
+// En tu archivo user-client.ts o auth-client.ts
+export async function cambiarMiContrasena(input: {
+  passwordActual: string;
+  passwordNueva: string;
+}): Promise<void> {
+  await pedir(`/api/auth/change-password`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+}

@@ -3,8 +3,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useTheme, type Palette } from "@/src/context/ThemeContext";
 import { Button } from "@/src/components/ui/Button";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
 import { SearchInput, SelectFilter } from "@/src/components/ui/Filters";
 import { Modal } from "@/src/components/ui/Modal";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import {
   cambiarEstadoBackup,
   eliminarBackup,
@@ -130,6 +132,13 @@ export default function BackupsPage() {
   const [detalleCargando, setDetalleCargando] = useState(false);
   const [cambiandoId, setCambiandoId] = useState<string | null>(null);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [confirmacion, setConfirmacion] = useState<BackupConEjecutor | null>(
+    null,
+  );
+  const [toast, setToast] = useState<{
+    tipo: ToastTipo;
+    mensaje: string;
+  } | null>(null);
 
   const [modalFallido, setModalFallido] = useState(false);
   const [backupFallido, setBackupFallido] =
@@ -216,8 +225,9 @@ export default function BackupsPage() {
     setErrorForm(null);
 
     try {
+      const nombreArchivo = form.nombre_archivo.trim();
       await registrarBackup({
-        nombre_archivo: form.nombre_archivo.trim(),
+        nombre_archivo: nombreArchivo,
         ruta_almacenamiento: form.ruta_almacenamiento.trim(),
         tipo_backup: form.tipo_backup,
         hash_checksum: form.hash_checksum.trim() || null,
@@ -225,10 +235,15 @@ export default function BackupsPage() {
       });
       setModalNuevo(false);
       setRecarga((n) => n + 1);
+      setToast({
+        tipo: "success",
+        mensaje: `El backup "${nombreArchivo}" se creó correctamente.`,
+      });
     } catch (err) {
-      setErrorForm(
-        err instanceof Error ? err.message : "No se pudo registrar el backup.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo crear el backup.";
+      setErrorForm(mensaje);
+      setToast({ tipo: "error", mensaje });
     } finally {
       setGuardando(false);
     }
@@ -272,12 +287,25 @@ export default function BackupsPage() {
         setDetalle(actualizado);
         setSeleccionado(actualizado);
       }
+
+      setToast({
+        tipo: "success",
+        mensaje:
+          nuevoEstado === EstadoBackup.Completado
+            ? `El backup "${backup.nombre_archivo}" se marcó como completado.`
+            : nuevoEstado === EstadoBackup.Fallido
+              ? `El backup "${backup.nombre_archivo}" se marcó como fallido.`
+              : nuevoEstado === EstadoBackup.Restaurado
+                ? `El backup "${backup.nombre_archivo}" se marcó como restaurado.`
+                : `El estado del backup "${backup.nombre_archivo}" se actualizó correctamente.`,
+      });
     } catch (err) {
-      setError(
+      const mensaje =
         err instanceof Error
           ? err.message
-          : "No se pudo actualizar el estado del backup.",
-      );
+          : "No se pudo actualizar el estado del backup.";
+      setError(mensaje);
+      setToast({ tipo: "error", mensaje });
     } finally {
       setCambiandoId(null);
     }
@@ -310,15 +338,14 @@ export default function BackupsPage() {
     void aplicarCambioEstado(backup, EstadoBackup.Fallido, detalleError);
   };
 
-  const handleEliminar = async (backup: BackupConEjecutor) => {
-    if (
-      !window.confirm(
-        `¿Seguro que quieres eliminar el backup "${backup.nombre_archivo}"? También se eliminará su bitácora.`,
-      )
-    ) {
-      return;
-    }
+  const handleEliminar = (backup: BackupConEjecutor) => {
+    setConfirmacion(backup);
+  };
 
+  const confirmarEliminacion = async () => {
+    if (!confirmacion) return;
+
+    const backup = confirmacion;
     setEliminandoId(backup.id_backup);
     setError(null);
     try {
@@ -328,11 +355,17 @@ export default function BackupsPage() {
         setSeleccionado(null);
         setDetalle(null);
       }
+      setConfirmacion(null);
       setRecarga((n) => n + 1);
+      setToast({
+        tipo: "success",
+        mensaje: `El backup "${backup.nombre_archivo}" se eliminó correctamente.`,
+      });
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "No se pudo eliminar el backup.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo eliminar el backup.";
+      setError(mensaje);
+      setToast({ tipo: "error", mensaje });
     } finally {
       setEliminandoId(null);
     }
@@ -375,8 +408,8 @@ export default function BackupsPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
         <div className="flex items-center justify-between shrink-0 gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">
@@ -414,7 +447,7 @@ export default function BackupsPage() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 my-4 shrink-0">
+        <div className="anim-fade-up delay-2 flex flex-wrap items-center gap-3 my-4 shrink-0">
           <span className="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 uppercase">
             <SlidersHorizontal size={13} />
             Filtros
@@ -476,7 +509,7 @@ export default function BackupsPage() {
           {hayFiltros && (
             <button
               onClick={limpiarFiltros}
-              className="flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
+              className="anim-press flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-bold text-slate-500 hover:text-red-600 hover:bg-red-50 border border-slate-200 transition"
               title="Limpiar filtros"
             >
               <X size={13} />
@@ -492,7 +525,7 @@ export default function BackupsPage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
+        <div className="anim-fade-up delay-3 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs">
           {cargando ? (
             <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
               <Loader2 size={22} className="animate-spin" />
@@ -611,7 +644,7 @@ export default function BackupsPage() {
                           <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => abrirDetalle(item)}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                              className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                               onMouseEnter={(e) => {
                                 e.currentTarget.style.backgroundColor =
                                   palette.primary;
@@ -633,7 +666,7 @@ export default function BackupsPage() {
                                   handleCambiarEstado(item, EstadoBackup.Completado)
                                 }
                                 disabled={cambiandoId === item.id_backup}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="Marcar como completado"
                               >
                                 {cambiandoId === item.id_backup ? (
@@ -650,7 +683,7 @@ export default function BackupsPage() {
                                   handleCambiarEstado(item, EstadoBackup.Fallido)
                                 }
                                 disabled={cambiandoId === item.id_backup}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                                className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-amber-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="Marcar como fallido"
                               >
                                 {cambiandoId === item.id_backup ? (
@@ -664,7 +697,7 @@ export default function BackupsPage() {
                             <button
                               onClick={() => handleEliminar(item)}
                               disabled={eliminandoId === item.id_backup}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                              className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                               title="Eliminar backup"
                             >
                               {eliminandoId === item.id_backup ? (
@@ -695,7 +728,7 @@ export default function BackupsPage() {
           )}
         </div>
 
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        <div className="anim-fade-up delay-4 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             Mostrando {resumen.total} registro
             {resumen.total === 1 ? "" : "s"} (límite 500)
@@ -828,14 +861,14 @@ export default function BackupsPage() {
             <button
               type="button"
               onClick={() => setModalNuevo(false)}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
+              className="anim-press px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={guardando}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="anim-press flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: palette.primary }}
             >
               {guardando ? (
@@ -1016,7 +1049,7 @@ export default function BackupsPage() {
                         handleCambiarEstado(actual, EstadoBackup.Completado)
                       }
                       disabled={cambiandoId === actual.id_backup}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
+                      className="anim-press flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition disabled:opacity-50"
                     >
                       <CheckCircle2 size={14} />
                       Completado
@@ -1028,7 +1061,7 @@ export default function BackupsPage() {
                         handleCambiarEstado(actual, EstadoBackup.Restaurado)
                       }
                       disabled={cambiandoId === actual.id_backup}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition disabled:opacity-50"
+                      className="anim-press flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 transition disabled:opacity-50"
                     >
                       <RotateCcw size={14} />
                       Restaurado
@@ -1038,7 +1071,7 @@ export default function BackupsPage() {
                     <button
                       onClick={() => handleCambiarEstado(actual, EstadoBackup.Fallido)}
                       disabled={cambiandoId === actual.id_backup}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 transition disabled:opacity-50"
+                      className="anim-press flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-red-500 bg-red-50 border border-red-200 hover:bg-red-100 transition disabled:opacity-50"
                     >
                       <XCircle size={14} />
                       Fallido
@@ -1046,7 +1079,7 @@ export default function BackupsPage() {
                   )}
                   <button
                     onClick={() => setModalDetalle(false)}
-                    className="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
+                    className="anim-press px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
                     style={{ backgroundColor: palette.primary }}
                   >
                     Cerrar
@@ -1101,14 +1134,14 @@ export default function BackupsPage() {
             <button
               type="button"
               onClick={cerrarModalFallido}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
+              className="anim-press px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 border border-slate-200 transition"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={confirmarFallido}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm bg-red-500 hover:bg-red-600 transition"
+              className="anim-press flex items-center gap-2 px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm bg-red-500 hover:bg-red-600 transition"
             >
               <XCircle size={14} />
               Marcar como fallido
@@ -1116,6 +1149,27 @@ export default function BackupsPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmacion !== null}
+        title="Eliminar backup"
+        description={
+          confirmacion
+            ? `¿Estás seguro de eliminar el backup "${confirmacion.nombre_archivo}"? Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Eliminar backup"
+        loading={eliminandoId === confirmacion?.id_backup}
+        onConfirm={confirmarEliminacion}
+        onCancel={() => setConfirmacion(null)}
+      />
+
+      <Toast
+        open={toast !== null}
+        message={toast?.mensaje ?? ""}
+        type={toast?.tipo ?? "success"}
+        onClose={() => setToast(null)}
+      />
     </div>
   );
 }

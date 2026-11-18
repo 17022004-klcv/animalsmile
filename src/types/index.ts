@@ -12,3 +12,4 @@ export * from "@/src/types/donacion";
 export * from "@/src/types/bitacora";
 export * from "@/src/types/configuracion";
 export * from "@/src/types/auth";
+export * from "@/src/types/dashboard";

@@ -51,3 +51,233 @@ body {
   border-top-left-radius: 20px;
   box-shadow: -6px -6px 0 0 white;
 }
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes anim-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes anim-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes anim-fade-down {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes anim-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes anim-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes anim-toast-in {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes anim-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes anim-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes anim-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes anim-soft-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes anim-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.anim-fade-in,
+.anim-fade-up,
+.anim-fade-down,
+.anim-scale-in,
+.anim-modal-in,
+.anim-toast-in,
+.anim-slide-left,
+.anim-slide-right {
+  animation-fill-mode: backwards;
+  animation-delay: var(--anim-delay, 0ms);
+}
+
+.anim-fade-in {
+  animation: anim-fade-in 0.45s ease-out backwards;
+}
+.anim-fade-up {
+  animation: anim-fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-fade-down {
+  animation: anim-fade-down 0.55s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-scale-in {
+  animation: anim-scale-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-modal-in {
+  animation: anim-modal-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-toast-in {
+  animation: anim-toast-in 0.35s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-slide-left {
+  animation: anim-slide-left 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-slide-right {
+  animation: anim-slide-right 0.45s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+.anim-float {
+  animation: anim-float 5s ease-in-out infinite;
+}
+.anim-pulse {
+  animation: anim-soft-pulse 2.4s ease-in-out infinite;
+}
+.anim-shimmer {
+  background-size: 200% 100%;
+  animation: anim-shimmer 2s linear infinite;
+}
+
+.anim-hover-lift {
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.anim-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 35px -18px rgb(15 23 42 / 0.45);
+}
+
+.anim-zoom-img {
+  overflow: hidden;
+}
+.anim-zoom-img img {
+  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.anim-zoom-img:hover img {
+  transform: scale(1.06);
+}
+
+.anim-press {
+  transition:
+    transform 0.15s ease,
+    opacity 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+.anim-press:active {
+  transform: scale(0.96);
+}
+
+.delay-1 {
+  --anim-delay: 80ms;
+}
+.delay-2 {
+  --anim-delay: 160ms;
+}
+.delay-3 {
+  --anim-delay: 240ms;
+}
+.delay-4 {
+  --anim-delay: 320ms;
+}
+.delay-5 {
+  --anim-delay: 400ms;
+}
+.delay-6 {
+  --anim-delay: 480ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

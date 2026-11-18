@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "@/src/context/ThemeContext";
 import { Button } from "@/src/components/ui/Button";
 import { SearchInput } from "@/src/components/ui/Filters";
 import { Modal } from "@/src/components/ui/Modal";
+import { ConfirmDialog } from "@/src/components/ui/ConfirmDialog";
+import { Toast, type ToastTipo } from "@/src/components/ui/Toast";
 import { fechaCorta } from "@/src/services/animals/animal-format";
 import {
   eliminarDonacionEspecie,
@@ -34,6 +36,8 @@ import {
   Plus,
   Trash2,
   Users,
+  Filter,
+  X,
 } from "lucide-react";
 
 export default function DonacionesEspeciePage() {
@@ -43,12 +47,22 @@ export default function DonacionesEspeciePage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  const [confirmacion, setConfirmacion] =
+    useState<DonacionConRegistrador | null>(null);
+  const [toast, setToast] = useState<{
+    tipo: ToastTipo;
+    mensaje: string;
+  } | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [donacionSeleccionada, setDonacionSeleccionada] =
     useState<DonacionConRegistrador | null>(null);
+
+  // --- Filtros avanzados ---
+  const [filtroTipo, setFiltroTipo] = useState("");
+  const [filtroUnidad, setFiltroUnidad] = useState("");
 
   const itemsPerPage = 8;
 
@@ -94,22 +108,58 @@ export default function DonacionesEspeciePage() {
     };
   }, []);
 
-  const filteredData = donaciones.filter((item) => {
-    const texto = searchTerm.toLowerCase();
-    return (
-      (item.donante_nombre ?? "").toLowerCase().includes(texto) ||
-      (item.donante_email ?? "").toLowerCase().includes(texto) ||
-      etiquetaTipoDonacion(item.tipo).toLowerCase().includes(texto) ||
-      (item.unidad_medida ?? "").toLowerCase().includes(texto) ||
-      (item.descripcion_detalle ?? "").toLowerCase().includes(texto) ||
-      (item.registrador
-        ? `${item.registrador.nombre} ${item.registrador.apellido}`
-        : ""
-      )
-        .toLowerCase()
-        .includes(texto)
-    );
-  });
+  // Extraer opciones únicas
+  const opcionesTipos = useMemo(() => {
+    const tipos = donaciones
+      .map((d) => d.tipo)
+      .filter((t) => !!t && t.trim() !== "");
+    return Array.from(new Set(tipos)).sort();
+  }, [donaciones]);
+
+  const opcionesUnidades = useMemo(() => {
+    const unidades = donaciones
+      .map((d) => d.unidad_medida)
+      .filter((u): u is string => !!u && u.trim() !== "");
+    return Array.from(new Set(unidades)).sort();
+  }, [donaciones]);
+
+  const filtrosActivos = useMemo(() => {
+    let n = 0;
+    if (filtroTipo) n++;
+    if (filtroUnidad) n++;
+    return n;
+  }, [filtroTipo, filtroUnidad]);
+
+  const limpiarFiltros = () => {
+    setFiltroTipo("");
+    setFiltroUnidad("");
+    setCurrentPage(1);
+  };
+
+  const filteredData = useMemo(() => {
+    return donaciones.filter((item) => {
+      const texto = searchTerm.toLowerCase();
+      const coincideTexto =
+        !texto ||
+        (item.donante_nombre ?? "").toLowerCase().includes(texto) ||
+        (item.donante_email ?? "").toLowerCase().includes(texto) ||
+        etiquetaTipoDonacion(item.tipo).toLowerCase().includes(texto) ||
+        (item.unidad_medida ?? "").toLowerCase().includes(texto) ||
+        (item.descripcion_detalle ?? "").toLowerCase().includes(texto) ||
+        (item.registrador
+          ? `${item.registrador.nombre} ${item.registrador.apellido}`
+          : ""
+        )
+          .toLowerCase()
+          .includes(texto);
+
+      const coincideTipo = !filtroTipo || item.tipo === filtroTipo;
+      const coincideUnidad =
+        !filtroUnidad || item.unidad_medida === filtroUnidad;
+
+      return coincideTexto && coincideTipo && coincideUnidad;
+    });
+  }, [donaciones, searchTerm, filtroTipo, filtroUnidad]);
 
   const totalPages = Math.ceil(filteredData.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -123,26 +173,36 @@ export default function DonacionesEspeciePage() {
     setModalOpen(true);
   };
 
-  const handleEliminar = async (donacion: DonacionConRegistrador) => {
-    if (
-      !window.confirm(
-        `¿Seguro que quieres eliminar la donación en especie de "${donacion.donante_nombre ?? "Anónimo"}" (${formatearCantidad(donacion.cantidad, donacion.unidad_medida)})? Esta acción no se puede deshacer.`,
-      )
-    ) {
-      return;
-    }
+  const handleEliminar = (donacion: DonacionConRegistrador) => {
+    setConfirmacion(donacion);
+  };
 
-    setEliminandoId(donacion.id_donacion);
+  const confirmarEliminacion = async () => {
+    if (!confirmacion) return;
+
+    const donante = confirmacion.donante_nombre ?? "Anónimo";
+    const cantidad = formatearCantidad(
+      confirmacion.cantidad,
+      confirmacion.unidad_medida,
+    );
+    setEliminandoId(confirmacion.id_donacion);
     setError(null);
     try {
-      await eliminarDonacionEspecie(donacion.id_donacion);
+      await eliminarDonacionEspecie(confirmacion.id_donacion);
+      setConfirmacion(null);
+      setToast({
+        tipo: "success",
+        mensaje: `La donación en especie de "${donante}" (${cantidad}) se eliminó correctamente.`,
+      });
       await cargarDonaciones();
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo eliminar la donación.",
-      );
+      const mensaje =
+        err instanceof Error ? err.message : "No se pudo eliminar la donación.";
+      setError(mensaje);
+      setToast({
+        tipo: "error",
+        mensaje,
+      });
     } finally {
       setEliminandoId(null);
     }
@@ -218,8 +278,9 @@ export default function DonacionesEspeciePage() {
   };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
-      <div className="h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+    <div className="anim-fade-in h-[calc(100vh-5rem)] w-full p-4 overflow-hidden bg-slate-50 text-slate-800 flex flex-col justify-between select-none">
+      <div className="anim-fade-up delay-1 h-full bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs flex flex-col justify-between overflow-hidden">
+        {/* Cabecera */}
         <div className="flex items-center justify-between shrink-0">
           <div>
             <h1 className="text-2xl font-black text-slate-800 tracking-tight">
@@ -227,10 +288,20 @@ export default function DonacionesEspeciePage() {
               <span style={{ color: palette.primary }}>en Especie</span>
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Registros totales:{" "}
+              Mostrando:{" "}
               <span className="font-bold" style={{ color: palette.primary }}>
-                {donaciones.length}
-              </span>
+                {filteredData.length}
+              </span>{" "}
+              de {donaciones.length} registros
+              {filtrosActivos > 0 && (
+                <span
+                  style={{ color: palette.primary }}
+                  className="font-semibold ml-1"
+                >
+                  · {filtrosActivos} filtro{filtrosActivos > 1 ? "s" : ""}{" "}
+                  activo{filtrosActivos > 1 ? "s" : ""}
+                </span>
+              )}
             </p>
           </div>
 
@@ -248,7 +319,8 @@ export default function DonacionesEspeciePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 my-4 shrink-0">
+        {/* Buscador */}
+        <div className="anim-fade-up delay-2 my-4 shrink-0">
           <SearchInput
             value={searchTerm}
             onChange={(e) => {
@@ -259,6 +331,82 @@ export default function DonacionesEspeciePage() {
           />
         </div>
 
+        {/* Panel de Filtros */}
+        <div className="anim-fade-up delay-3 mb-3 shrink-0 rounded-2xl border border-slate-200 bg-slate-50/60 p-3.5">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
+              <Filter size={12} />
+              Filtros avanzados
+              {filtrosActivos > 0 && (
+                <span
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black text-white"
+                  style={{ backgroundColor: palette.primary }}
+                >
+                  {filtrosActivos}
+                </span>
+              )}
+            </span>
+
+            {filtrosActivos > 0 && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="anim-press inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition"
+                title="Limpiar filtros"
+              >
+                <X size={12} />
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Tipo de Donación */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Tipo de Donación
+              </label>
+              <select
+                value={filtroTipo}
+                onChange={(e) => {
+                  setFiltroTipo(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+              >
+                <option value="">Todos los tipos</option>
+                {opcionesTipos.map((tipo) => (
+                  <option key={tipo} value={tipo}>
+                    {etiquetaTipoDonacion(tipo)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Unidad de Medida */}
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                Unidad de Medida
+              </label>
+              <select
+                value={filtroUnidad}
+                onChange={(e) => {
+                  setFiltroUnidad(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full px-3 py-2 text-xs bg-white border border-slate-200 rounded-xl text-slate-700 focus:outline-none hover:border-[var(--color-primary)] focus:border-[var(--color-primary)] transition"
+              >
+                <option value="">Todas las unidades</option>
+                {opcionesUnidades.map((unidad) => (
+                  <option key={unidad} value={unidad}>
+                    {unidad}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+
         {error && (
           <div className="flex items-center gap-2 px-4 py-2.5 mb-3 rounded-xl bg-red-50 border border-red-200 text-red-600 text-xs font-semibold shrink-0">
             <AlertTriangle size={14} />
@@ -266,8 +414,9 @@ export default function DonacionesEspeciePage() {
           </div>
         )}
 
-        <div className="flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
-          <div className="flex-1 min-h-0 overflow-hidden">
+        {/* Tabla */}
+        <div className="anim-fade-up delay-4 flex-1 min-h-0 border border-slate-200 rounded-2xl overflow-hidden bg-white shadow-2xs flex flex-col">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {cargando ? (
               <div className="h-full flex flex-col items-center justify-center gap-2 text-slate-400">
                 <Loader2 size={22} className="animate-spin" />
@@ -277,7 +426,7 @@ export default function DonacionesEspeciePage() {
               </div>
             ) : (
               <table className="w-full text-left text-xs text-slate-600">
-                <thead className="bg-slate-50/95 border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold">
+                <thead className="sticky top-0 bg-slate-50/95 backdrop-blur-xs border-b border-slate-200 text-slate-500 uppercase tracking-wider text-[10px] font-bold z-10">
                   <tr>
                     <th className="px-4 py-3">Donante</th>
                     <th className="px-4 py-3">Tipo</th>
@@ -354,7 +503,7 @@ export default function DonacionesEspeciePage() {
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => handleVerDetalle(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.primary;
@@ -372,7 +521,7 @@ export default function DonacionesEspeciePage() {
 
                           <Link
                             href={`/admin/modules/Donations/InKindDonations/Form?id=${item.id_donacion}`}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.secondary;
@@ -390,7 +539,7 @@ export default function DonacionesEspeciePage() {
 
                           <button
                             onClick={() => descargarFicha(item)}
-                            className="p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
+                            className="anim-press p-1.5 rounded-lg text-slate-500 hover:text-white transition shadow-2xs"
                             onMouseEnter={(e) => {
                               e.currentTarget.style.backgroundColor =
                                 palette.dark;
@@ -409,7 +558,7 @@ export default function DonacionesEspeciePage() {
                           <button
                             onClick={() => handleEliminar(item)}
                             disabled={eliminandoId === item.id_donacion}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
+                            className="anim-press p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition shadow-2xs disabled:opacity-40 disabled:cursor-not-allowed"
                             title="Eliminar registro"
                           >
                             {eliminandoId === item.id_donacion ? (
@@ -429,7 +578,9 @@ export default function DonacionesEspeciePage() {
                         colSpan={6}
                         className="px-4 py-12 text-center text-slate-400 font-medium"
                       >
-                        No se encontraron donaciones en especie.
+                        {filtrosActivos > 0 || searchTerm
+                          ? "No se encontraron donaciones en especie con los filtros aplicados."
+                          : "No se encontraron donaciones en especie."}
                       </td>
                     </tr>
                   )}
@@ -439,7 +590,8 @@ export default function DonacionesEspeciePage() {
           </div>
         </div>
 
-        <div className="pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
+        {/* Paginación */}
+        <div className="anim-fade-up delay-5 pt-4 flex items-center justify-between text-xs text-slate-500 font-medium shrink-0">
           <span>
             mostrando {filteredData.length > 0 ? startIndex + 1 : 0}-
             {Math.min(startIndex + itemsPerPage, filteredData.length)} de{" "}
@@ -450,7 +602,7 @@ export default function DonacionesEspeciePage() {
             <button
               onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
               disabled={currentPage === 1}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronLeft size={16} />
             </button>
@@ -462,7 +614,7 @@ export default function DonacionesEspeciePage() {
             <button
               onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
               disabled={currentPage === totalPages || totalPages === 0}
-              className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="anim-press p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               <ChevronRight size={16} />
             </button>
@@ -470,9 +622,11 @@ export default function DonacionesEspeciePage() {
         </div>
       </div>
 
+      {/* Modal de Previsualización (3 Columnas) */}
       <Modal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        size="xl"
         title={
           <span className="flex items-center gap-2">
             <Package size={18} style={{ color: palette.primary }} />
@@ -481,27 +635,29 @@ export default function DonacionesEspeciePage() {
         }
       >
         {donacionSeleccionada && (
-          <div className="space-y-3 text-xs text-slate-600">
+          <div className="space-y-5 text-xs text-slate-600 w-full">
+            {/* Header con degradado */}
             <div
-              className="flex items-center justify-between gap-3 p-4 rounded-xl text-white"
+              className="flex items-center justify-between gap-3 p-4 rounded-2xl text-white shadow-sm"
               style={{
                 background: `linear-gradient(135deg, ${palette.primary}, ${palette.secondary})`,
               }}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-11 h-11 rounded-full flex items-center justify-center bg-white/20 border border-white/40 shrink-0">
-                  <Package size={20} />
+              <div className="flex items-center gap-4 min-w-0">
+                <span className="w-12 h-12 rounded-full flex items-center justify-center bg-white/20 border border-white/40 shrink-0">
+                  <Package size={24} />
                 </span>
                 <div className="min-w-0">
-                  <h3 className="font-bold text-sm truncate">
+                  <h3 className="font-bold text-lg truncate">
                     {donacionSeleccionada.donante_nombre ?? "Anónimo"}
                   </h3>
-                  <p className="text-[11px] text-white/80 truncate">
-                    {donacionSeleccionada.donante_email ?? "Sin correo"}
+                  <p className="text-xs text-white/80 truncate">
+                    {donacionSeleccionada.donante_email ??
+                      "Sin correo registrado"}
                   </p>
                 </div>
               </div>
-              <span className="text-lg font-black shrink-0 text-right">
+              <span className="text-2xl font-black shrink-0 whitespace-nowrap">
                 {formatearCantidad(
                   donacionSeleccionada.cantidad,
                   donacionSeleccionada.unidad_medida,
@@ -509,34 +665,28 @@ export default function DonacionesEspeciePage() {
               </span>
             </div>
 
-            <div className="grid grid-cols-2 gap-2">
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Package size={11} /> Tipo
+            {/* Grid de 3 Columnas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {/* Fila 1 */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Package size={12} /> Tipo de Donación
                 </span>
                 <p className="font-semibold text-slate-800">
                   {etiquetaTipoDonacion(donacionSeleccionada.tipo)}
                 </p>
               </div>
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Calendar size={11} /> Fecha
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Calendar size={12} /> Fecha de Registro
                 </span>
                 <p className="font-semibold text-slate-800">
                   {fechaCorta(donacionSeleccionada.fecha_donacion)}
                 </p>
               </div>
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Mail size={11} /> Correo
-                </span>
-                <p className="font-semibold text-slate-800 break-all">
-                  {donacionSeleccionada.donante_email ?? "—"}
-                </p>
-              </div>
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-                <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                  <Users size={11} /> Registrado por
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-center">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Users size={12} /> Registrado por
                 </span>
                 <p className="font-semibold text-slate-800 truncate">
                   {donacionSeleccionada.registrador
@@ -544,44 +694,45 @@ export default function DonacionesEspeciePage() {
                     : "—"}
                 </p>
               </div>
-            </div>
 
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                <FileText size={11} /> Detalle
-              </span>
-              <p className="font-semibold text-slate-800 mt-0.5">
-                {donacionSeleccionada.descripcion_detalle ??
-                  "Sin detalle registrado."}
-              </p>
-            </div>
+              {/* Fila 2 (Comprobante) */}
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-100 flex flex-col justify-center md:col-span-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                  <Link2 size={12} /> Comprobante
+                </span>
+                {donacionSeleccionada.comprobante_url ? (
+                  <a
+                    href={donacionSeleccionada.comprobante_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-semibold text-xs hover:underline break-all"
+                    style={{ color: palette.primary }}
+                  >
+                    Ver comprobante adjunto
+                    <ExternalLink size={12} />
+                  </a>
+                ) : (
+                  <p className="font-semibold text-slate-800">No adjunto</p>
+                )}
+              </div>
 
-            <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100">
-              <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                <Link2 size={11} /> Comprobante
-              </span>
-              {donacionSeleccionada.comprobante_url ? (
-                <a
-                  href={donacionSeleccionada.comprobante_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 font-semibold text-xs mt-0.5 hover:underline break-all"
-                  style={{ color: palette.primary }}
-                >
-                  Ver comprobante
-                  <ExternalLink size={11} />
-                </a>
-              ) : (
-                <p className="font-semibold text-slate-800 mt-0.5">
-                  No adjunto
+              {/* Detalle (Ancho completo) */}
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-100 md:col-span-3">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                  <FileText size={14} /> Detalle de la Donación
+                </span>
+                <p className="font-semibold text-slate-800">
+                  {donacionSeleccionada.descripcion_detalle ??
+                    "Sin detalle registrado."}
                 </p>
-              )}
+              </div>
             </div>
 
+            {/* Footer */}
             <div className="pt-2 flex justify-end">
               <button
                 onClick={() => setModalOpen(false)}
-                className="px-4 py-2 rounded-xl text-white font-bold text-xs shadow-sm transition"
+                className="anim-press px-6 py-2.5 rounded-xl text-white font-bold text-sm shadow-sm transition hover:opacity-90 active:scale-95"
                 style={{ backgroundColor: palette.primary }}
               >
                 Cerrar
@@ -590,6 +741,27 @@ export default function DonacionesEspeciePage() {
           </div>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={confirmacion !== null}
+        title="Eliminar donación en especie"
+        description={
+          confirmacion
+            ? `¿Estás seguro de eliminar la donación en especie de "${confirmacion.donante_nombre ?? "Anónimo"}" (${formatearCantidad(confirmacion.cantidad, confirmacion.unidad_medida)})? Esta acción no se puede deshacer.`
+            : ""
+        }
+        confirmLabel="Eliminar donación"
+        loading={eliminandoId === confirmacion?.id_donacion}
+        onConfirm={confirmarEliminacion}
+        onCancel={() => setConfirmacion(null)}
+      />
+
+      <Toast
+        open={toast !== null}
+        message={toast?.mensaje ?? ""}
+        type={toast?.tipo ?? "success"}
+        onClose={() => setToast(null)}
+      />
     </div>
   );
 }

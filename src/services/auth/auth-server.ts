@@ -153,3 +153,42 @@ export async function registrarCuenta(
     },
   };
 }
+
+// En tu archivo de auth-service.ts
+export async function cambiarContrasena(
+  idUsuario: string,
+  passwordActual: string,
+  passwordNueva: string,
+) {
+  // 1. Buscamos al usuario
+  const usuario = await prisma.usuario.findUnique({
+    where: { id_usuario: idUsuario },
+  });
+
+  if (!usuario) {
+    throw new ErrorServicio(404, "Usuario no encontrado.");
+  }
+
+  // 2. Verificamos que la contraseña actual sea correcta
+  const coincide = await bcrypt.compare(passwordActual, usuario.password_hash);
+  if (!coincide) {
+    throw new ErrorServicio(400, "La contraseña actual es incorrecta.");
+  }
+
+  // 3. Validamos la nueva contraseña (mínimo 8 caracteres, etc.)
+  if (passwordNueva.length < 8) {
+    throw new ErrorServicio(
+      400,
+      "La nueva contraseña debe tener al menos 8 caracteres.",
+    );
+  }
+
+  // 4. Encriptamos y guardamos la nueva
+  const nuevoHash = await bcrypt.hash(passwordNueva, 10);
+  await prisma.usuario.update({
+    where: { id_usuario: idUsuario },
+    data: { password_hash: nuevoHash },
+  });
+
+  return { exito: true };
+}
