@@ -15,7 +15,7 @@ export async function setSessionCookie(
   cookieStore.set(SESSION_COOKIE, createSessionToken(payload), {
     httpOnly: true,
     sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    secure: false,
     path: "/",
     maxAge: SESSION_MAX_AGE,
   });
@@ -36,7 +36,12 @@ export async function getSession(): Promise<SessionPayload | null> {
 type AccesoEvento = {
   idUsuario?: string | null;
   emailIntentado?: string | null;
-  tipoEvento: "Login" | "Logout" | "Login_Fallido" | "Bloqueo_Cuenta" | "Cambio_Password";
+  tipoEvento:
+    | "Login"
+    | "Logout"
+    | "Login_Fallido"
+    | "Bloqueo_Cuenta"
+    | "Cambio_Password";
   ipOrigen?: string | null;
   userAgent?: string | null;
   exito?: boolean;
